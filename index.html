@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Approximate e with Random Numbers — Simulation</title>
+<style>
+  :root{--bg:#0f1724;--card:#0b1220;--accent:#60a5fa;--muted:#94a3b8;--glass:rgba(255,255,255,0.03)}
+  html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial}
+  body{background:linear-gradient(180deg,#071026 0%, #071827 100%);color:#e6eef8;display:flex;align-items:flex-start;justify-content:center;padding:28px}
+  .wrap{width:980px;max-width:96%;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 30px rgba(2,6,23,0.6)}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  h1{font-size:18px;margin:0}
+  p.lead{margin:0;color:var(--muted);font-size:13px}
+  .controls{display:flex;gap:12px;align-items:end;margin-top:14px}
+  label{font-size:13px;color:var(--muted)}
+  input[type=number]{width:140px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:var(--glass);color:inherit}
+  button{background:var(--accent);border:none;padding:10px 14px;border-radius:8px;color:#04243a;font-weight:600;cursor:pointer}
+  button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+  .grid{display:grid;grid-template-columns:360px 1fr;gap:12px;margin-top:14px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+  .stats{display:flex;flex-direction:column;gap:10px}
+  .statrow{display:flex;justify-content:space-between;align-items:center}
+  .big{font-size:28px;font-weight:700}
+  .muted{color:var(--muted);font-size:13px}
+  canvas{width:100%;height:220px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border-radius:6px}
+  footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:center}
+  .tiny{font-size:12px;color:var(--muted)}
+  .progress{height:8px;background:rgba(255,255,255,0.03);border-radius:8px;overflow:hidden}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,#60a5fa,#7c3aed);width:0%}
+  @media (max-width:880px){.grid{grid-template-columns:1fr;}
+    header{flex-direction:column;align-items:flex-start;gap:6px}
+    .controls{flex-wrap:wrap}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Approximate <code>e</code> with Random Numbers</h1>
+      <p class="lead">Run trials where you draw uniform(0,1) numbers until their running sum exceeds 1. The average count → e (~2.718...).</p>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div>
+      <label>Trials</label><br>
+      <input id="trials" type="number" min="1" step="1" value="10000">
+    </div>
+    <div>
+      <label>Chunk size (for responsiveness)</label><br>
+      <input id="chunk" type="number" min="1" step="1" value="1000">
+    </div>
+    <div>
+      <label>Max count shown in histogram</label><br>
+      <input id="maxcount" type="number" min="5" step="1" value="12">
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button id="run">Run</button>
+      <button class="secondary" id="stop">Stop</button>
+      <button class="secondary" id="reset">Reset</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="stats">
+        <div class="statrow"><div class="muted">Trials completed</div><div id="completed" class="big">0</div></div>
+        <div class="statrow"><div class="muted">Current mean (average count)</div><div id="mean" class="big">—</div></div>
+        <div class="statrow"><div class="muted">Difference from e</div><div id="diff" class="big">—</div></div>
+        <div class="statrow"><div class="muted">Theoretical e</div><div class="big">2.718281828459045</div></div>
+
+        <div>
+          <div class="muted">Progress</div>
+          <div class="progress" style="margin-top:6px"><i id="progbar"></i></div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button id="download">Download CSV</button>
+          <button id="quick5" class="secondary">Quick 5 trials</button>
+          <button id="quick100" class="secondary">Quick 100</button>
+        </div>
+
+        <p class="tiny" style="margin-top:8px">Tip: Use chunk size to keep the UI responsive when running many trials.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+        <div>
+          <div class="muted">Histogram of counts (capped at selected max)</div>
+          <div class="tiny">Bars show fraction of trials that ended at each count. "Overflow" counts are grouped into the last bin.</div>
+        </div>
+        <div class="muted">Live update</div>
+      </div>
+      <canvas id="hist"></canvas>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center;justify-content:space-between">
+        <div class="muted">Last few counts: <span id="lastfew">—</span></div>
+        <div class="muted">Estimated e (rounded): <strong id="erounded">—</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Static geometric diagrams -->
+  <div class="card" style="margin-top:12px;">
+    <h3>Visualizing e using simplexes</h3>
+    <p class="tiny">The expected number of uniform(0,1) draws until their sum exceeds 1 corresponds to the volume of n-dimensional simplexes.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;justify-content:center;">
+      <div style="flex:1;min-width:120px;text-align:center;">
+        <canvas id="canvas1d" width="120" height="60"></canvas>
+        <div class="muted tiny">1D: Line segment [0,1]</div>
+      </div>
+      <div style="flex:1;min-width:120px;text-align:center;">
+        <canvas id="canvas2d" width="120" height="120"></canvas>
+        <div class="muted tiny">2D: Triangle x+y ≤ 1 inside unit square</div>
+      </div>
+      <div style="flex:1;min-width:140px;text-align:center;">
+        <canvas id="canvas3d" width="140" height="140"></canvas>
+        <div class="muted tiny">3D: Tetrahedron x+y+z ≤ 1 inside unit cube</div>
+      </div>
+    </div>
+    <p class="tiny" style="margin-top:6px">These diagrams show the “allowed region” in blue inside the unit hypercube. The fraction of volume corresponds to the probability that the sum ≤ 1 for n draws.</p>
+  </div>
+
+  <footer>
+    <div class="muted">How it works: For each trial draw u1,u2,... ~ Uniform(0,1) until ∑ ui > 1. The expectation of that count is e.</div>
+  </footer>
+</div>
+
+<script>
+  // DOM refs
+  const trialsInput = document.getElementById('trials');
+  const chunkInput = document.getElementById('chunk');
+  const maxCountInput = document.getElementById('maxcount');
+  const runBtn = document.getElementById('run');
+  const stopBtn = document.getElementById('stop');
+  const resetBtn = document.getElementById('reset');
+  const completedEl = document.getElementById('completed');
+  const meanEl = document.getElementById('mean');
+  const diffEl = document.getElementById('diff');
+  const progBar = document.getElementById('progbar');
+  const histCanvas = document.getElementById('hist');
+  const lastfewEl = document.getElementById('lastfew');
+  const eroundedEl = document.getElementById('erounded');
+  const downloadBtn = document.getElementById('download');
+  const quick5 = document.getElementById('quick5');
+  const quick100 = document.getElementById('quick100');
+
+  let running = false;
+  let completed = 0;
+  let counts = [];
+
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    histCanvas.width = Math.floor(histCanvas.clientWidth*dpr);
+    histCanvas.height = Math.floor(histCanvas.clientHeight*dpr);
+    drawHist();
+  }
+  window.addEventListener('resize', resizeCanvas);
+
+  function drawHist(){
+    const ctx=histCanvas.getContext('2d');
+    const w=histCanvas.width,h=histCanvas.height;
+    ctx.clearRect(0,0,w,h);
+    const maxBin=Math.max(5,parseInt(maxCountInput.value)||12);
+    const bins=new Array(maxBin).fill(0);
+    counts.forEach(c=>{ if(c<maxBin) bins[c]++; else bins[maxBin-1]++; });
+    const total=counts.length||1;
+
+    ctx.fillStyle='rgba(255,255,255,0.02)'; ctx.fillRect(0,0,w,h);
+
+    const pad=32*(window.devicePixelRatio||1);
+    const chartW=w-pad-12;
+    const chartH=h-pad-10;
+    const maxCountBin=Math.max(...bins,1);
+
+    const barW=chartW/bins.length;
+    for(let i=0;i<bins.length;i++){
+      const bw=Math.max(4,Math.floor(barW*0.8));
+      const x=pad+i*barW+(barW-bw)/2;
+      const barH=Math.round((bins[i]/maxCountBin)*chartH);
+      const y=pad+(chartH-barH);
+      const grad=ctx.createLinearGradient(x,y,x,y+barH);
+      grad.addColorStop(0,'rgba(96,165,250,0.95)');
+      grad.addColorStop(1,'rgba(124,58,237,0.9)');
+      ctx.fillStyle=grad;
+      ctx.fillRect(x,y,bw,barH);
+
+      ctx.fillStyle='rgba(255,255,255,0.8)';
+      ctx.font=Math.round(12*(window.devicePixelRatio||1))+'px sans-serif';
+      ctx.textAlign='center';
+      const lab=(i<bins.length-1)?String(i):(i+'+');
+      ctx.fillText(lab,x+bw/2,pad+chartH+18);
+    }
+
+    ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.font=Math.round(13*(window.devicePixelRatio||1))+'px sans-serif';
+    ctx.textAlign='left';
+    ctx.fillText('Counts histogram (bin = # random draws needed)',8,16);
+    ctx.fillStyle='rgba(255,255,255,0.6)';
+    ctx.font=Math.round(11*(window.devicePixelRatio||1))+'px sans-serif';
+    ctx.fillText(`Trials: ${counts.length}`,8,34);
+  }
+
+  function trialOnce(){
+    let sum=0,c=0; while(sum<=1){sum+=Math.random();c++;} return c;
+  }
+
+  function updateStats(){
+    completedEl.textContent=completed.toLocaleString();
+    if(counts.length===0){ meanEl.textContent='—'; diffEl.textContent='—'; eroundedEl.textContent='—'; lastfewEl.textContent='—'; }
+    else{
+      const mean=counts.reduce((a,b)=>a+b,0)/counts.length;
+      meanEl.textContent=mean.toFixed(6);
+      diffEl.textContent=Math.abs(mean-Math.E).toFixed(6);
+      eroundedEl.textContent=mean.toFixed(4);
+      lastfewEl.textContent=counts.slice(-10).join(', ');
+    }
+    drawHist();
+  }
+
+  function runTrialsBatch(totalTrials, chunkSize){
+    running=true;
+    function step(){
+      if(!running) return;
+      const remaining=totalTrials-completed;
+      const runNow=Math.min(remaining,chunkSize);
+      for(let i=0;i<runNow;i++){ counts.push(trialOnce()); completed++; }
+      progBar.style.width=Math.round((completed/totalTrials)*100)+'%';
+      updateStats();
+      if(completed<totalTrials){ setTimeout(step,0); } else{ running=false; }
+    }
+    step();
+  }
+
+  runBtn.addEventListener('click',()=>{ if(!running){ const t=Math.max(1,parseInt(trialsInput.value)||1000); const chunk=Math.max(1,parseInt(chunkInput.value)||1000); completed=0; counts=[]; progBar.style.width='0%'; runTrialsBatch(t,chunk); }});
+  stopBtn.addEventListener('click',()=>{ running=false; });
+  resetBtn.addEventListener('click',()=>{ running=false; completed=0; counts=[]; progBar.style.width='0%'; updateStats(); });
+  quick5.addEventListener('click',()=>{ trialsInput.value=5; runBtn.click(); });
+  quick100.addEventListener('click',()=>{ trialsInput.value=100; runBtn.click(); });
+  downloadBtn.addEventListener('click',()=>{
+    if(counts.length===0){ alert('No data yet. Run some trials first.'); return; }
+    const header='trial,count\n';
+    const rows=counts.map((c,i)=>`${i+1},${c}`).join('\n');
+    const blob=new Blob([header+rows],{type:'text/csv'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='e_sim_counts.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+  maxCountInput.addEventListener('change',drawHist);
+  resizeCanvas(); updateStats();
+
+  // --- static diagrams ---
+  // 1D
+  const c1 = document.getElementById('canvas1d').getContext('2d');
+  c1.clearRect(0,0,120,60);
+  c1.fillStyle='rgba(96,165,250,0.3)'; c1.fillRect(10,25,100,10);
+  c1.strokeStyle='#60a5fa'; c1.lineWidth=2; c1.strokeRect(10,25,100,10);
+
+  // 2D unit square + triangle
+  const c2=document.getElementById('canvas2d').getContext('2d');
+  c2.clearRect(0,0,120,120);
+  // unit square
+  c2.strokeStyle='rgba(255,255,255,0.6)'; c2.lineWidth=2;
+  c2.strokeRect(10,10,100,100);
+  // triangle
+  c2.fillStyle='rgba(96,165,250,0.3)';
+  c2.beginPath(); c2.moveTo(10,110); c2.lineTo(110,110); c2.lineTo(10,10); c2.closePath(); c2.fill();
+  c2.strokeStyle='#60a5fa'; c2.lineWidth=2; c2.stroke();
+
+  // 3D unit cube + tetrahedron
+  const c3=document.getElementById('canvas3d').getContext('2d');
+  c3.clearRect(0,0,140,140);
+  // cube (simple isometric)
+  c3.strokeStyle='rgba(255,255,255,0.5)'; c3.lineWidth=1;
+  c3.beginPath();
+  c3.moveTo(20,120); c3.lineTo(120,120); c3.lineTo(120,20); c3.lineTo(20,20); c3.closePath(); // front face
+  c3.moveTo(20,20); c3.lineTo(40,0); c3.lineTo(140,0); c3.lineTo(120,20); // top face
+  c3.moveTo(120,120); c3.lineTo(140,100); c3.lineTo(140,0); c3.lineTo(120,20); // side face
+  c3.stroke();
+  // tetrahedron inside cube
+  c3.fillStyle='rgba(96,165,250,0.3)';
+  c3.beginPath();
+  c3.moveTo(20,120); c3.lineTo(120,120); c3.lineTo(20,20); c3.lineTo(20,120);
+  c3.lineTo(80,40); c3.lineTo(120,120); c3.lineTo(80,40); c3.lineTo(20,20);
+  c3.closePath(); c3.fill();
+  c3.strokeStyle='#60a5fa'; c3.lineWidth=2; c3.stroke();
+
+</script>
+</body>
+</html>
