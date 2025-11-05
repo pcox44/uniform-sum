@@ -8,9 +8,9 @@ body {
   font-family: 'Segoe UI', sans-serif;
   background: radial-gradient(circle at top left, #1a237e 0%, #311b92 100%);
   color: #eee;
-  text-align: center;
   margin: 0;
   padding: 10px;
+  overflow-x: hidden;
 }
 h1 { margin: 12px; color: #fff; text-shadow: 2px 2px 6px rgba(0,0,0,0.8);}
 #topDesc, #explanation {
@@ -22,15 +22,31 @@ h1 { margin: 12px; color: #fff; text-shadow: 2px 2px 6px rgba(0,0,0,0.8);}
   text-align: left;
   line-height: 1.5;
 }
-#controls { margin: 12px auto; }
+#controls { margin: 12px auto; text-align: center; }
 button { margin: 5px; padding: 10px 20px; font-size: 15px; border: none; border-radius: 8px; cursor: pointer; background: linear-gradient(135deg,#26a69a,#004d40); color:white; }
 button:hover { background: linear-gradient(135deg,#4db6ac,#00695c); transform: scale(1.05);}
 label { margin-left: 10px; font-weight: bold; }
-canvas { display: block; margin: 12px auto; background: rgba(20,20,40,0.9); border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.35);}
-#stickCanvas { width: min(95vw,1000px); height: 220px; }
-#chartCanvas { width: min(95vw,1000px); height: 280px; }
-#histCanvas { width: min(95vw,1000px); height: 240px; }
-#stats { margin-top:10px; padding: 12px 16px; background: rgba(40,40,60,0.9); border-radius: 10px; text-align: left; min-width: 320px; color: #fff; }
+canvas { display: block; margin: 12px auto; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.35);}
+#stickCanvas { width: min(95vw,1000px); height: 220px; background: rgba(20,20,40,0.9);}
+#histBox { width: min(95vw,1000px); margin: 0 auto; background: rgba(20,20,40,0.9); border-radius: 10px; padding: 10px; }
+#histCanvas { width: 100%; height: 240px; }
+#stats {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 300px;          /* increased width */
+  padding: 20px;         /* more padding */
+  background: rgba(40,40,60,0.95);
+  border-radius: 12px;
+  text-align: left;
+  color: #fff;
+  font-size: 16px;       /* larger font */
+  line-height: 1.6;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+#lastTrialBox { position: absolute; top: 200px; right: 10px; padding: 12px 16px; background: rgba(40,40,60,0.9); border-radius: 10px; text-align: left; min-width: 220px; color: #fff; font-size: 14px; max-width: 300px; word-wrap: break-word; }
+.stickSpan { display: inline-block; margin: 2px 4px; padding: 2px 4px; border-radius: 4px; font-weight: normal; }
 </style>
 </head>
 <body>
@@ -38,7 +54,7 @@ canvas { display: block; margin: 12px auto; background: rgba(20,20,40,0.9); bord
 <h1>Uniform Sum Simulation for e</h1>
 
 <div id="topDesc">
-<strong>Process:</strong> Pick numbers of random length (0–1) end-to-end until they exceed the target (1 or 2). Count how many sticks were needed.
+<strong>Process:</strong> Pick random numbers (0–1) end-to-end until they exceed the target. Count how many sticks were needed.
 </div>
 
 <div id="controls">
@@ -47,34 +63,38 @@ canvas { display: block; margin: 12px auto; background: rgba(20,20,40,0.9); bord
   <button id="drop10">Run 10</button>
   <button id="drop100">Run 100</button>
   <button id="drop1000">Run 1000</button>
-  <label for="targetSum">Target sum:</label>
-  <select id="targetSum">
-    <option value="1" selected>1 (≈ e)</option>
-    <option value="2">2 (≈ e² − e)</option>
-  </select>
+  <label for="targetSumInput">Target sum:</label>
+  <input type="number" id="targetSumInput" value="1" step="0.01" min="0.01">
 </div>
 
 <canvas id="stickCanvas" width="1000" height="220"></canvas>
-<canvas id="chartCanvas" width="1000" height="280"></canvas>
-<canvas id="histCanvas" width="1000" height="240"></canvas>
-<div id="stats"></div>
 
-<div id="explanation">
-<strong>Why it’s e:</strong> If X₁, X₂, … are Uniform(0,1) and N is the smallest integer s.t. X₁+…+X_N > target, E[N]=e for target=1, and e²−e for target=2. This simulation shows the convergence empirically.
+<div id="histBox">
+<canvas id="histCanvas" width="1000" height="240"></canvas>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div id="stats"></div>
+<div id="lastTrialBox"></div>
+
+<div id="explanation">
+<strong>Why it’s e:</strong> Consider picking numbers X₁, X₂, … uniformly from 0 to 1.<br>
+To exceed a target sum of 1, there is only <strong>one ordering of n numbers</strong> that will first exceed the target exactly after the nth pick.  
+The probability of that ordering is 1/n!, and summing these probabilities over n gives the series 1 + 1/1! + 1/2! + … = e.  
+</div>
+
 <script>
 const stickCanvas = document.getElementById('stickCanvas');
 const ctx = stickCanvas.getContext('2d');
-const chartCanvas = document.getElementById('chartCanvas');
 const histCanvas = document.getElementById('histCanvas');
+const histCtx = histCanvas.getContext('2d');
 const statsDiv = document.getElementById('stats');
+const lastTrialBox = document.getElementById('lastTrialBox');
 
-let targetSum = parseFloat(document.getElementById('targetSum').value);
+let targetSum = parseFloat(document.getElementById('targetSumInput').value);
 let currentSticks = [], currentSum = 0;
-let trialColors = [], trialResults = [], runningAverages = [];
-let animating = false;
+let trialResults = [], runningAverages = [];
+let trialColors = [], animating = false;
+let lastTrialSticks = [];
 
 function makeColors(n=1000){
   let arr=[];
@@ -93,7 +113,6 @@ function drawStickSegment(x,width,y,index,val,isLast=false){
   ctx.font='bold 14px Segoe UI'; ctx.textBaseline='middle';
   ctx.strokeStyle='rgba(0,0,0,0.8)'; ctx.lineWidth=4;
 
-  // Place label left if this stick pushes sum over target
   ctx.textAlign = isLast ? 'left' : 'center';
   const cx = isLast ? x+2 : x+width/2;
   const cy = y+14;
@@ -105,7 +124,7 @@ async function dropStickAnimated(len,index){
   const baseY=drawBase(), scale=stickCanvas.width/targetSum, stickWidth=len*scale;
   const x=currentSticks.slice(0,index).reduce((a,b)=>a+b,0)*scale;
   let y=-60;
-  const isLast = currentSticks.reduce((a,b)=>a+b,0) + len > targetSum; // last stick over target
+  const isLast = currentSticks.reduce((a,b)=>a+b,0) + len > targetSum;
   return new Promise(resolve=>{
     function fall(){
       ctx.clearRect(0,0,stickCanvas.width,baseY);
@@ -120,74 +139,80 @@ async function dropStickAnimated(len,index){
 
 function resetTrialState(){ currentSticks=[]; currentSum=0; drawBase(); }
 
-function endTrial(){ trialResults.push(currentSticks.length); let sum=0; runningAverages=trialResults.map((v,i)=>{sum+=v;return sum/(i+1);}); updateCharts(); updateStats(); }
+function endTrial(){
+  trialResults.push(currentSticks.length);
+  lastTrialSticks = [...currentSticks]; // store last trial sticks
+  let sum=0; 
+  runningAverages = trialResults.map((v,i)=>{sum+=v; return sum/(i+1);});
+  updateHistogram();
+  updateStats();
+  updateLastTrialBox();
+}
 
-function updateCharts(){
-  const ref=(targetSum===1)?Math.E:(Math.E**2-Math.E);
-  lineChart.data.labels=trialResults.map((_,i)=>i+1);
-  lineChart.data.datasets[0].data=runningAverages.slice();
-  lineChart.data.datasets[1].data=Array(trialResults.length).fill(ref);
-  lineChart.options.scales.y.min=Math.max(0,ref-1.2); lineChart.options.scales.y.max=ref+1.2;
-  lineChart.update();
-
+function updateHistogram(){
   const freq={};
-  for(const v of trialResults) freq[v]=(freq[v]||0)+1;
-  const keys=Object.keys(freq).map(Number).sort((a,b)=>a-b);
-  histChart.data.labels=keys;
-  histChart.data.datasets[0].data=keys.map(k=>freq[k]);
-  // Match histogram color to stick color
-  histChart.data.datasets[0].backgroundColor=keys.map(k=>trialColors[(k-1)%trialColors.length]);
-  histChart.update();
+  for(let i=0;i<trialResults.length;i++){
+    const v = trialResults[i];
+    freq[v] = (freq[v]||0) + 1;
+  }
+
+  const maxVal = Math.max(Math.ceil(targetSum*4), ...trialResults, 10);
+  const labels = Array.from({length:maxVal},(_,i)=>i+1);
+  const data = labels.map(k=>freq[k]||0);
+
+  histCtx.clearRect(0,0,histCanvas.width,histCanvas.height);
+  const baseY = histCanvas.height-40;
+  const barWidth = histCanvas.width/labels.length*0.8;
+
+  for(let i=0;i<labels.length;i++){
+    const h = (data[i]/Math.max(...data,1))*(histCanvas.height-60);
+    let idx = trialResults.findIndex(v=>v===labels[i]);
+    const color = idx>=0 ? trialColors[idx%trialColors.length] : '#666';
+    histCtx.fillStyle=color;
+    histCtx.fillRect(i*(histCanvas.width/labels.length)+barWidth*0.1,baseY-h,barWidth,h);
+  }
+
+  histCtx.fillStyle="#fff";
+  histCtx.font='bold 14px Segoe UI';
+  histCtx.textAlign='center';
+  histCtx.textBaseline='top';
+  for(let i=0;i<labels.length;i++){
+    histCtx.fillText(labels[i], i*(histCanvas.width/labels.length)+barWidth/2, baseY+4);
+  }
 }
 
 function updateStats(){
-  if(trialResults.length===0){statsDiv.innerHTML=''; return;}
-  const n=trialResults.length;
-  const avg=runningAverages[runningAverages.length-1];
-  const variance=trialResults.reduce((a,b)=>a+Math.pow(b-avg,2),0)/n;
-  const std=Math.sqrt(variance);
-  const ref=(targetSum===1)?Math.E:(Math.E**2-Math.E);
-  statsDiv.innerHTML=`<strong>Trials:</strong>${n}<br><strong>Average sticks/trial:</strong>${avg.toFixed(4)}<br><strong>Std deviation:</strong>${std.toFixed(4)}<br><strong>Theoretical:</strong>${ref.toFixed(4)}`;
+  if(trialResults.length===0){ statsDiv.innerHTML=''; return; }
+  const n = trialResults.length;
+  const avg = runningAverages[runningAverages.length-1];
+  const variance = trialResults.reduce((a,b)=>a+Math.pow(b-avg,2),0)/n;
+  const std = Math.sqrt(variance);
+  let theoretical='';
+  if(targetSum===1) theoretical = 'e ≈ 2.7183';
+  else if(targetSum===2) theoretical = 'e²-e ≈ 4.6708';
+  statsDiv.innerHTML=`<strong>Trials:</strong> ${n}<br><strong>Average sticks/trial:</strong> ${avg.toFixed(4)}<br><strong>Std deviation:</strong> ${std.toFixed(4)}<br><strong>Theoretical:</strong> ${theoretical}`;
 }
 
-async function runSingleTrial(){
-  if(animating) return; animating=true; resetTrialState();
-  let s=0;
-  while(s<=targetSum){ const len=Math.random(); currentSticks.push(len); await dropStickAnimated(len,currentSticks.length-1); s+=len; currentSum=s; }
-  endTrial(); animating=false;
-}
+function updateLastTrialBox(){
+  if(lastTrialSticks.length===0){ lastTrialBox.innerHTML='No trial yet.'; return; }
+  let sum=0;
+  let content='';
+  const scale=0.8; // max width scaling for wrap
 
-function runTrials(n){
-  const newResults=[];
-  for(let i=0;i<n;i++){let s=0,count=0; while(s<=targetSum){s+=Math.random(); count++;} newResults.push(count);}
-  trialResults.push(...newResults); let sum=0; runningAverages=trialResults.map((v,i)=>{sum+=v; return sum/(i+1);}); updateCharts(); updateStats();
+  lastTrialSticks.forEach((v,i)=>{
+    sum += v;
+    const isLast = sum > targetSum;
+    const color = trialColors[i%trialColors.length];
+    content += `<span class="stickSpan" style="color:${color}; font-weight:${isLast?'bold':'normal'};">${v.toFixed(3)}</span> `;
+  });
+  lastTrialBox.innerHTML=`<strong>Last trial calculation:</strong><br>${content}<br>Sum = ${sum.toFixed(3)} &gt; ${targetSum}`;
 }
-
-// Chart.js
-const lineChart=new Chart(chartCanvas,{type:'line',data:{labels:[],datasets:[{label:'Trial Average',data:[],borderColor:'#00e5ff',borderWidth:3,tension:0.25,fill:false},{label:'Expected Value',data:[],borderColor:'#ff4081',borderDash:[6,6],borderWidth:2,fill:false}]},options:{animation:{duration:300},scales:{y:{ticks:{color:'#fff'}},x:{ticks:{color:'#fff'}}},plugins:{legend:{labels:{color:'#fff'}}}}});
-const histChart = new Chart(histCanvas, {
-  type: 'bar',
-  data: { labels: [], datasets: [{ label: 'Stick Count Frequency', data: [], backgroundColor: [] }] },
-  options: {
-    responsive: true,
-    scales: {
-      y: { beginAtZero: true, ticks: { color: '#fff' } },
-      x: { ticks: { color: '#fff' } }
-    },
-    plugins: { legend: { labels: { color: '#fff' } } }
-  }
-});
 
 // --- Button Actions ---
 document.getElementById('dropStick').onclick = async () => {
   if (animating) return;
 
-  // If we have already completed a trial, reset for a new one
-  if (currentSum >= targetSum) {
-    currentSticks = [];
-    currentSum = 0;
-    drawBase();
-  }
+  if (currentSum >= targetSum) resetTrialState();
 
   animating = true;
   const len = Math.random();
@@ -195,34 +220,50 @@ document.getElementById('dropStick').onclick = async () => {
   currentSum += len;
 
   await dropStickAnimated(len, currentSticks.length - 1);
-
   animating = false;
 
-  // Only end the trial if sum exceeds target
-  if (currentSum > targetSum) {
-    endTrial();
-  }
+  if (currentSum > targetSum) endTrial();
 };
 
-
-document.getElementById('dropOneTrial').onclick = runSingleTrial;
+document.getElementById('dropOneTrial').onclick = async ()=>{ if(!animating) {animating=true; await runSingleTrial(); animating=false;} };
 document.getElementById('drop10').onclick = ()=>runTrials(10);
 document.getElementById('drop100').onclick = ()=>runTrials(100);
 document.getElementById('drop1000').onclick = ()=>runTrials(1000);
 
-document.getElementById('targetSum').onchange = (e) => {
-  targetSum = parseFloat(e.target.value);
+async function runSingleTrial(){
+  resetTrialState();
+  let s=0;
+  while(s<=targetSum){ const len=Math.random(); currentSticks.push(len); await dropStickAnimated(len,currentSticks.length-1); s+=len; currentSum=s; }
+  endTrial();
+}
+
+function runTrials(n){
+  const newResults=[];
+  for(let i=0;i<n;i++){let s=0,count=0; while(s<=targetSum){s+=Math.random(); count++;} newResults.push(count);}
+  trialResults.push(...newResults); 
+  lastTrialSticks = [...currentSticks]; // store last trial sticks for batch
+  let sum=0; runningAverages = trialResults.map((v,i)=>{sum+=v; return sum/(i+1);});
+  updateHistogram();
+  updateStats();
+  updateLastTrialBox();
+}
+
+document.getElementById('targetSumInput').onchange = (e)=>{
+  targetSum=parseFloat(e.target.value);
   resetTrialState();
   trialResults=[];
   runningAverages=[];
-  updateCharts();
+  lastTrialSticks=[];
+  updateHistogram();
   updateStats();
+  updateLastTrialBox();
 };
 
 // Initialize
 resetTrialState();
-updateCharts();
+updateHistogram();
 updateStats();
+updateLastTrialBox();
 </script>
 </body>
 </html>
