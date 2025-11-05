@@ -77,9 +77,15 @@ canvas { display: block; margin: 12px auto; border-radius: 10px; box-shadow: 0 8
 <div id="lastTrialBox"></div>
 
 <div id="explanation">
-<strong>Why it’s e:</strong> Consider picking numbers X₁, X₂, … uniformly from 0 to 1.<br>
-To exceed a target sum of 1, there is only <strong>one ordering of n numbers</strong> that will first exceed the target exactly after the nth pick.  
-The probability of that ordering is 1/n!, and summing these probabilities over n gives the series 1 + 1/1! + 1/2! + … = e.  
+  <strong>Why it’s e:</strong>
+  <p>
+    Let <em>X₁, X₂, …</em> be independent Uniform(0,1) numbers, and let <em>N</em> be the smallest number such that <em>X₁ + … + X<sub>N</sub> &gt; target</em>.
+  </p>
+  <p>
+    For a target of 1, the probability that the sum first exceeds 1 exactly on the nth number is the volume of the n-dimensional simplex <em>x₁ + … + x<sub>n</sub> ≤ 1</em> inside the unit hypercube, which is 1/n!.  
+    So the expected number of numbers needed is:<br>
+    <em>E[N] = Σ<sub>n=1</sub><sup>∞</sup> n/n! = 1 + 1 + 1/2 + 1/6 + … = e</em>
+  </p>
 </div>
 
 <script>
