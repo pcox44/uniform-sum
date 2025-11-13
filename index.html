@@ -311,17 +311,31 @@ function updateStats(){
 }
 
 function updateLastTrialBox(){
-  if(currentSticks.length===0){ lastTrialBox.innerHTML='No trial yet.'; return; }
-  let sum=0;
-  let content='';
+  if(currentSticks.length===0){ 
+    lastTrialBox.innerHTML='No trial yet.'; 
+    return; 
+  }
+  let sum = 0;
+  let content = '';
   currentSticks.forEach((v,i)=>{
-    sum+=v;
-    const isLast = sum>targetSum;
+    sum += v;
+    const isLast = sum > targetSum;
     const color = getStickColor(i);
-    content += `<span class="stickSpan" style="color:${color}; font-weight:${isLast?'bold':'normal'};">${v.toFixed(3)}</span> `;
+
+    content += `<span class="stickSpan" style="
+      color:${color}; 
+      font-weight: bold;
+      padding:2px 4px;
+      border-radius:2px;
+      ${isLast ? `border: 2px solid ${color};` : ''}
+    ">${v.toFixed(3)}</span> `;
   });
-  lastTrialBox.innerHTML=`<strong>Last trial calculation:</strong><br>${content}<br>Sum = ${sum.toFixed(3)} &gt; ${targetSum}`;
+
+  lastTrialBox.innerHTML = `<strong>Last trial calculation:</strong><br>${content}<br>
+    <strong>Sum:</strong> ${sum.toFixed(3)} &gt; ${targetSum}
+    <span style="margin-left:50px;"><strong>Sticks used:</strong> ${currentSticks.length}</span>`;
 }
+
 
 // BUTTONS
 document.getElementById('dropStick').onclick = async()=>{
