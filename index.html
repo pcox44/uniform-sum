@@ -242,59 +242,88 @@ const firstNeonColors = [
 
 function getStickColor(index){if(index < firstNeonColors.length) return firstNeonColors[index]; return firstNeonColors[(index - firstNeonColors.length) % firstNeonColors.length];}
 
+// ----- Updated drawBase() -----
 function drawBase(){ 
   ctx.clearRect(0,0,stickCanvas.width,stickCanvas.height);
-  const baseY = stickCanvas.height - 40;
-  ctx.strokeStyle="#aaa"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,baseY); ctx.lineTo(stickCanvas.width,baseY); ctx.stroke();
-  const boxSize=8;
-  for(let y=0;y<stickCanvas.height;y+=boxSize){
-    for(let x=stickCanvas.width-20;x<stickCanvas.width;x+=boxSize*2){
-      ctx.fillStyle=(Math.floor(y/boxSize)%2===0)?"#fff":"#000";
-      ctx.fillRect(x,y,boxSize,boxSize);
-      ctx.fillStyle=(Math.floor(y/boxSize)%2===0)?"#000":"#fff";
-      ctx.fillRect(x+boxSize,y,boxSize,boxSize);
+  const baseY = stickCanvas.height - 50; // slightly higher for taller sticks
+  ctx.strokeStyle="#aaa"; 
+  ctx.lineWidth=3; 
+  ctx.beginPath(); 
+  ctx.moveTo(0,baseY); 
+  ctx.lineTo(stickCanvas.width,baseY); 
+  ctx.stroke();
+
+  const boxSize = 8;
+  const checkerStartX = stickCanvas.width - 60; // wider checkerboard
+  for(let y=0; y<stickCanvas.height; y+=boxSize){
+    for(let x=checkerStartX; x<stickCanvas.width; x+=boxSize*2){
+      ctx.fillStyle = (Math.floor(y/boxSize)%2===0) ? "#fff" : "#000";
+      ctx.fillRect(x, y, boxSize, boxSize);
+      ctx.fillStyle = (Math.floor(y/boxSize)%2===0) ? "#000" : "#fff";
+      ctx.fillRect(x+boxSize, y, boxSize, boxSize);
     }
   }
+
   return baseY;
 }
 
-
-function drawStickSegment(x,width,y,index,val,isLast=false){
+// ----- Updated drawStickSegment() -----
+function drawStickSegment(x, width, y, index, val, isLast=false){
+  const stickHeight = 50; // taller sticks
   const color = getStickColor(index);
-  ctx.fillStyle=color;
-  ctx.fillRect(x,y,width,28);
-  ctx.lineWidth=6;
-  ctx.strokeStyle='black';
-  ctx.strokeRect(x,y,width,28);
-  const fontSize = Math.min(16, Math.max(12, width*0.3 + 8));
-  ctx.font=`bold ${fontSize}px Segoe UI`;
-  ctx.textBaseline='middle';
-  ctx.fillStyle='#000';
-  ctx.textAlign=isLast?'left':'center';
-  const cy = y+14;
-  ctx.fillText(val.toFixed(2), isLast ? x+2 : x+width/2, cy);
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, width, stickHeight);
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = 'black';
+  ctx.strokeRect(x, y, width, stickHeight);
+
+  // font size proportional to stick height
+  const fontSize = Math.min(24, Math.max(14, stickHeight * 0.6));
+  ctx.font = `bold ${fontSize}px Segoe UI`;
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#000';
+
+  const cy = y + stickHeight / 2;
+  const leftPadding = 20; // extra padding for last stick
+  ctx.textAlign = isLast ? 'left' : 'center';
+  ctx.fillText(val.toFixed(2), isLast ? x + leftPadding : x + width / 2, cy);
 }
 
-async function dropStickAnimated(len,index){
+
+async function dropStickAnimated(len, index){
   const baseY = drawBase();
   const scale = stickCanvas.width / targetSum;
-  const stickWidth = len*scale;
-  const x = currentSticks.slice(0,index).reduce((a,b)=>a+b,0)*scale;
-  const isLast = currentSticks.reduce((a,b)=>a+b,0)+len > targetSum;
+  const stickWidth = len * scale;
+  const x = currentSticks.slice(0,index).reduce((a,b)=>a+b,0) * scale;
+
+  // During animation, always center numbers
   let y = -60;
-  return new Promise(resolve=>{
+  return new Promise(resolve => {
     function fall(){
       drawBase();
-      let px=0;
+      let px = 0;
       for(let i=0;i<index;i++){
-        drawStickSegment(px, currentSticks[i]*scale, baseY-28, i, currentSticks[i]);
+        // always center during animation
+        drawStickSegment(px, currentSticks[i]*scale, baseY-28, i, currentSticks[i], false);
         px += currentSticks[i]*scale;
       }
-      if(y<baseY-28){ y+=20; drawStickSegment(px, stickWidth, y, index, len, isLast); requestAnimationFrame(fall);}
-      else { drawStickSegment(px, stickWidth, baseY-28, index, len, isLast); resolve(); }
-    } fall();
+
+      if(y < baseY-28){
+        y += 20;
+        drawStickSegment(px, stickWidth, y, index, len, false); // false during fall
+        requestAnimationFrame(fall);
+      } else {
+        // landed! determine if this is the stick that goes over target
+        const totalBefore = currentSticks.slice(0,index).reduce((a,b)=>a+b,0);
+        const goesOver = totalBefore + len > targetSum;
+        drawStickSegment(px, stickWidth, baseY-28, index, len, goesOver);
+        resolve();
+      }
+    } 
+    fall();
   });
 }
+
 
 function resetTrialState(){ currentSticks=[]; currentSum=0; drawBase(); dropOneActive=false; }
 
@@ -534,6 +563,24 @@ function runTrials(n, reset=true){
   updateStats();
   if(reset) resetTrialState();
 }
+
+// ----- Fix canvas for high-DPI / sharp text -----
+function fixCanvasDPI(canvas, ctx) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+}
+
+// Apply to both canvases
+fixCanvasDPI(stickCanvas, ctx);
+fixCanvasDPI(histCanvas, histCtx);
+
+// Redraw everything after fixing DPI
+drawBase();
+updateHistogram();
+
 
 drawBase();
 updateHistogram();
