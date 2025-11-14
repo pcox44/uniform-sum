@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Uniform Sum Simulation </title>
+<title>Uniform Sum Simulation</title>
 <style>
 body {
   font-family: 'Segoe UI', sans-serif;
@@ -343,22 +343,40 @@ function updateHistogram() {
 
   const barWidth = plotWidth / labels.length * 0.8;
 
-  // Horizontal grid lines
-  histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
-  histCtx.lineWidth = 1;
-  histCtx.font = '14px Segoe UI';
-  histCtx.fillStyle = '#fff';
-  histCtx.textAlign = 'right';
-  histCtx.textBaseline = 'middle';
-  for(let i=0;i<=5;i++){
-    const yVal = i/5 * yMax;
-    const yPos = topPadding + plotHeight - (yVal/yMax * plotHeight);
+// Horizontal grid lines with proportion labels
+histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+histCtx.lineWidth = 1;
+histCtx.font = '14px Segoe UI';
+histCtx.fillStyle = '#fff';
+histCtx.textAlign = 'right';
+histCtx.textBaseline = 'middle';
+
+const ySteps = 5; // number of horizontal lines
+for(let i = 0; i <= ySteps; i++) {
+    const prop = (i / ySteps) * maxProp; // actual proportion value
+    const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
+
+    // draw horizontal grid line
     histCtx.beginPath();
     histCtx.moveTo(leftPadding, yPos);
-    histCtx.lineTo(histCanvas.width-rightPadding, yPos);
+    histCtx.lineTo(histCanvas.width - rightPadding, yPos);
     histCtx.stroke();
-    histCtx.fillText(yVal.toFixed(2), leftPadding-5, yPos);
-  }
+
+    // draw proportion label
+    histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos); // 10px left so visible
+}
+
+// Draw Y-axis label
+histCtx.save();
+histCtx.translate(20, histCanvas.height / 2); // move to left-middle
+histCtx.rotate(-Math.PI / 2); // rotate vertical
+histCtx.textAlign = 'center';
+histCtx.textBaseline = 'middle';
+histCtx.fillStyle = '#fff';
+histCtx.font = '16px Segoe UI';
+histCtx.fillText('Proportion', 0, 0);
+histCtx.restore();
+
 
   // Bars
   labels.forEach((label,i)=>{
