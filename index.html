@@ -262,18 +262,37 @@ function endTrial(){
   updateLastTrialBox();
 }
 
-function updateStats(){
-  if(trialResults.length===0){ statsDiv.innerHTML=''; return; }
-  const n = trialResults.length;
-  const avg = trialResults.reduce((a,b)=>a+b,0)/n;
-  let html = `<strong>Trials:</strong> ${n}<br><strong>Average sticks/trial:</strong> ${avg.toFixed(4)}<br>`;
-  if(targetSum===1 || targetSum===2){
-    const theoretical = targetSum===1?2.7183:4.6708;
-    html += `<strong>Theoretical:</strong> ${theoretical}<br>`;
-    html += `<strong>|Simulation - Theoretical|:</strong> ${Math.abs(avg-theoretical).toFixed(4)}<br>`;
+function updateStats() {
+  if(trialResults.length === 0) {
+    statsDiv.innerHTML = '';
+    return;
   }
-  statsDiv.innerHTML=html;
+
+  const n = trialResults.length;
+  const avg = trialResults.reduce((a, b) => a + b, 0) / n;
+
+  let html = `<strong>Trials:</strong> ${n}<br>`;
+  html += `<strong>Average sticks/trial:</strong> ${avg.toFixed(4)}<br>`;
+
+  if(targetSum === 1 || targetSum === 2) {
+    let theoreticalValue, theoreticalText;
+
+    if(targetSum === 1) {
+      theoreticalValue = Math.E;
+      theoreticalText = `e ≈ ${theoreticalValue.toFixed(4)}`;
+    } else if(targetSum === 2) {
+      theoreticalValue = Math.E**2 - Math.E;
+      theoreticalText = `e² - e ≈ ${theoreticalValue.toFixed(4)}`;
+    }
+
+    html += `<strong>Theoretical:</strong> ${theoreticalText}<br>`;
+    html += `<strong>|Simulation - Theoretical|:</strong> ${Math.abs(avg - theoreticalValue).toFixed(4)}<br>`;
+  }
+
+  statsDiv.innerHTML = html;
 }
+
+
 
 function updateLastTrialBox(){
   if(currentSticks.length===0){ 
@@ -418,9 +437,8 @@ drawBase();
 updateHistogram();
 
 
-
-
 </script>
 
 </body>
+
 </html>
