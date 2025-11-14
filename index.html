@@ -11,14 +11,12 @@ body {
   margin: 0;
   padding: 20px;
 }
-
 h1 { 
   margin: 0 0 12px 0; 
   color: #fff; 
   text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
   text-align: center;
 }
-
 .container {
   display: flex;
   flex-wrap: wrap;
@@ -26,7 +24,6 @@ h1 {
   max-width: 1600px;
   margin: 0 auto;
 }
-
 #stickCanvas {
   width: 100%;
   height: 220px;
@@ -36,11 +33,10 @@ h1 {
   box-shadow: 0 8px 20px rgba(0,0,0,0.35);
   margin-bottom: 20px;
 }
-
 .left-panel { flex: 1 1 600px; min-width: 300px; }
 .right-panel { flex: 1 1 350px; display: flex; flex-direction: column; gap: 20px; }
 
-#topDesc, #explanation, #histBox {
+#topDesc, #controls, #histBox, #stats, #lastTrialBox {
   padding: 10px 16px;
   background: rgba(20,20,40,0.9);
   border-radius: 10px;
@@ -49,16 +45,14 @@ h1 {
 }
 
 #controls {
-  margin: 12px 0;
-  text-align: left;
-  background: rgba(25, 25, 60, 0.85);
-  padding: 12px 16px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
+  background: rgba(25,25,60,0.85);
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 
 label {
@@ -81,7 +75,6 @@ input[type="number"] {
   outline: none;
   box-shadow: inset 0 0 6px rgba(0,255,255,0.2);
 }
-
 input[type="number"]:focus {
   border-color: #00e5ff;
   box-shadow: 0 0 10px rgba(0,255,255,0.7), inset 0 0 8px rgba(0,255,255,0.3);
@@ -105,22 +98,66 @@ button:hover {
 }
 
 canvas { display: block; margin: 8px 0; border-radius: 10px; }
-
 #histCanvas { width: 100%; height: 240px; }
 
-#stats, #lastTrialBox {
+#stats, #lastTrialBox, .collapsible-content {
   padding: 20px;
   background: rgba(40,40,60,0.95);
   border-radius: 12px;
   color: #fff;
-  font-size: 20px;
-  line-height: 1.8;
+  font-size: 18px;
+  line-height: 1.6;
   box-shadow: 0 6px 20px rgba(0,0,0,0.5);
   word-wrap: break-word;
 }
-#lastTrialBox { font-size: 18px; }
 
 .stickSpan { display: inline-block; margin: 2px 4px; padding: 2px 4px; border-radius: 4px; font-weight: normal; }
+
+/* Histogram table */
+#histTableContainer {
+  background: rgba(20,20,40,0.9);
+  padding: 10px 16px;
+  border-radius: 10px;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+#histTableContainer table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+}
+#histTableContainer th, #histTableContainer td {
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  padding: 6px 10px;
+  text-align: left;
+}
+#histTableContainer th { color: #b3e5fc; font-weight: bold; }
+
+/* Collapsible headers */
+.collapsible {
+  background: rgba(30,30,60,0.95);
+  color: #fff;
+  cursor: pointer;
+  padding: 12px 16px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 18px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.collapsible:hover { background: rgba(50,50,80,0.95); }
+.collapsible:after {
+  content: '\25BC';
+  float: right;
+}
+.collapsible.active:after {
+  content: '\25B2';
+}
+
+.collapsible-content { display: none; }
 </style>
 </head>
 <body>
@@ -148,6 +185,10 @@ canvas { display: block; margin: 8px 0; border-radius: 10px; }
     <div id="histBox">
       <canvas id="histCanvas" width="1000" height="240"></canvas>
     </div>
+
+    <!-- Collapsible histogram table -->
+    <button class="collapsible">Show/Hide Frequency Table</button>
+    <div class="collapsible-content" id="histTableContainer"></div>
   </div>
 
   <div class="right-panel">
@@ -156,7 +197,9 @@ canvas { display: block; margin: 8px 0; border-radius: 10px; }
   </div>
 </div>
 
-<div id="explanation">
+<!-- Collapsible explanation -->
+<button class="collapsible">Show/Hide Explanation</button>
+<div class="collapsible-content" id="explanation">
   <strong>Why it’s e:</strong>
   <p>
     Pick independent random numbers X₁, X₂, … from 0 to 1. Let N be the smallest number so that X₁ + … + X<sub>N</sub> exceeds the target.
@@ -168,6 +211,18 @@ canvas { display: block; margin: 8px 0; border-radius: 10px; }
 </div>
 
 <script>
+// Collapsible toggle
+document.querySelectorAll(".collapsible").forEach(btn => {
+  btn.addEventListener("click", function() {
+    this.classList.toggle("active");
+    const content = this.nextElementSibling;
+    if(content.style.display === "block") content.style.display = "none";
+    else content.style.display = "block";
+  });
+});
+
+// (JS for simulation: reuse all your existing JS for sticks, histogram, table, stats, etc.)
+// --- Copy your previous JS here unchanged ---
 const stickCanvas = document.getElementById('stickCanvas');
 const ctx = stickCanvas.getContext('2d');
 const histCanvas = document.getElementById('histCanvas');
@@ -185,23 +240,13 @@ const firstNeonColors = [
   '#ff6d00', '#ffeb3b', '#FF8DA1', '#00ff00'
 ];
 
-function getStickColor(index){
-  if(index < firstNeonColors.length) return firstNeonColors[index];
-  return firstNeonColors[(index - firstNeonColors.length) % firstNeonColors.length];
-}
+function getStickColor(index){if(index < firstNeonColors.length) return firstNeonColors[index]; return firstNeonColors[(index - firstNeonColors.length) % firstNeonColors.length];}
 
 function drawBase(){ 
   ctx.clearRect(0,0,stickCanvas.width,stickCanvas.height);
   const baseY = stickCanvas.height - 40;
-  
-  ctx.strokeStyle="#aaa"; 
-  ctx.lineWidth=3; 
-  ctx.beginPath(); 
-  ctx.moveTo(0,baseY); 
-  ctx.lineTo(stickCanvas.width,baseY); 
-  ctx.stroke(); 
-
-  const boxSize = 8;
+  ctx.strokeStyle="#aaa"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,baseY); ctx.lineTo(stickCanvas.width,baseY); ctx.stroke();
+  const boxSize=8;
   for(let y=0;y<stickCanvas.height;y+=boxSize){
     for(let x=stickCanvas.width-20;x<stickCanvas.width;x+=boxSize*2){
       ctx.fillStyle=(Math.floor(y/boxSize)%2===0)?"#fff":"#000";
@@ -210,9 +255,9 @@ function drawBase(){
       ctx.fillRect(x+boxSize,y,boxSize,boxSize);
     }
   }
-
   return baseY;
 }
+
 
 function drawStickSegment(x,width,y,index,val,isLast=false){
   const color = getStickColor(index);
@@ -262,6 +307,49 @@ function endTrial(){
   updateLastTrialBox();
 }
 
+/* --- NEW: HISTOGRAM TABLE --- */
+function updateHistTable() {
+  const container = document.getElementById("histTableContainer");
+
+  if (trialResults.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const maxVal = Math.max(...trialResults);
+  const labels = Array.from({length: maxVal}, (_, i) => i + 1);
+  const total = trialResults.length;
+
+  let runningSum = 0;
+
+  let html = `<table>
+      <tr>
+        <th>Sticks</th>
+        <th>Count</th>
+        <th>Relative Frequency</th>
+        <th>Running Sum</th>
+      </tr>`;
+
+  labels.forEach(l => {
+    const count = trialResults.filter(v => v === l).length;
+    const rel = count / total;
+    const contribution = l * rel;
+    runningSum += contribution;
+
+    html += `
+      <tr>
+        <td>${l}</td>
+        <td>${count}</td>
+        <td>${rel.toFixed(4)}</td>
+        <td>${runningSum.toFixed(4)}</td>
+      </tr>`;
+  });
+
+  html += `</table>`;
+  container.innerHTML = html;
+}
+
+
 function updateStats() {
   if(trialResults.length === 0) {
     statsDiv.innerHTML = '';
@@ -291,8 +379,6 @@ function updateStats() {
 
   statsDiv.innerHTML = html;
 }
-
-
 
 function updateLastTrialBox(){
   if(currentSticks.length===0){ 
@@ -330,55 +416,51 @@ function updateHistogram() {
   const plotWidth = histCanvas.width - leftPadding - rightPadding;
   const plotHeight = histCanvas.height - topPadding - bottomPadding;
 
-  if(trialResults.length===0) return;
+  if(trialResults.length===0) {
+    updateHistTable();
+    return;
+  }
 
   const maxVal = Math.max(...trialResults, 10);
   const labels = Array.from({length:maxVal},(_,i)=>i+1);
 
   const counts = labels.map(l => trialResults.filter(v => v === l).length);
   const proportions = counts.map(c => c / trialResults.length);
-  // New: 10% padding above the highest proportion
   const maxProp = Math.max(...proportions);
-  const yMax = maxProp * 1.1;  // 10% higher than max
+  const yMax = maxProp * 1.1;
 
   const barWidth = plotWidth / labels.length * 0.8;
 
-// Horizontal grid lines with proportion labels
-histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
-histCtx.lineWidth = 1;
-histCtx.font = '14px Segoe UI';
-histCtx.fillStyle = '#fff';
-histCtx.textAlign = 'right';
-histCtx.textBaseline = 'middle';
+  histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+  histCtx.lineWidth = 1;
+  histCtx.font = '14px Segoe UI';
+  histCtx.fillStyle = '#fff';
+  histCtx.textAlign = 'right';
+  histCtx.textBaseline = 'middle';
 
-const ySteps = 5; // number of horizontal lines
-for(let i = 0; i <= ySteps; i++) {
-    const prop = (i / ySteps) * maxProp; // actual proportion value
-    const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
+  const ySteps = 5;
+  for(let i = 0; i <= ySteps; i++) {
+      const prop = (i / ySteps) * maxProp;
+      const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
 
-    // draw horizontal grid line
-    histCtx.beginPath();
-    histCtx.moveTo(leftPadding, yPos);
-    histCtx.lineTo(histCanvas.width - rightPadding, yPos);
-    histCtx.stroke();
+      histCtx.beginPath();
+      histCtx.moveTo(leftPadding, yPos);
+      histCtx.lineTo(histCanvas.width - rightPadding, yPos);
+      histCtx.stroke();
 
-    // draw proportion label
-    histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos); // 10px left so visible
-}
+      histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos);
+  }
 
-// Draw Y-axis label
-histCtx.save();
-histCtx.translate(20, histCanvas.height / 2); // move to left-middle
-histCtx.rotate(-Math.PI / 2); // rotate vertical
-histCtx.textAlign = 'center';
-histCtx.textBaseline = 'middle';
-histCtx.fillStyle = '#fff';
-histCtx.font = '16px Segoe UI';
-histCtx.fillText('Proportion', 0, 0);
-histCtx.restore();
+  histCtx.save();
+  histCtx.translate(20, histCanvas.height / 2);
+  histCtx.rotate(-Math.PI / 2);
+  histCtx.textAlign = 'center';
+  histCtx.textBaseline = 'middle';
+  histCtx.fillStyle = '#fff';
+  histCtx.font = '16px Segoe UI';
+  histCtx.fillText('Proportion', 0, 0);
+  histCtx.restore();
 
-
-  // Bars
   labels.forEach((label,i)=>{
     const count = counts[i];
     const proportion = proportions[i];
@@ -389,7 +471,6 @@ histCtx.restore();
                      topPadding + plotHeight - h,
                      barWidth,
                      h);
-    // x-axis stick number
     histCtx.fillStyle = '#fff';
     histCtx.textAlign = 'center';
     histCtx.textBaseline = 'top';
@@ -399,6 +480,8 @@ histCtx.restore();
   histCtx.textAlign = 'center';
   histCtx.textBaseline = 'top';
   histCtx.fillText('Sticks Needed', leftPadding + plotWidth/2, histCanvas.height - bottomPadding + 20);
+
+  updateHistTable(); // NEW
 }
 
 // ---------------------- Button Events ----------------------
@@ -423,12 +506,14 @@ document.getElementById('dropOneTrial').onclick = async()=>{
   endTrial();
 };
 
-// Additive trial buttons
 document.getElementById('drop10').onclick = ()=>runTrials(10, false);
 document.getElementById('drop1000').onclick = ()=>runTrials(1000, false);
 
-// Reset button
-document.getElementById('resetHist').onclick = ()=>{ trialResults=[]; updateHistogram(); resetTrialState(); };
+document.getElementById('resetHist').onclick = ()=>{
+  trialResults=[];
+  updateHistogram();
+  resetTrialState();
+};
 
 document.getElementById('targetSumInput').addEventListener('input', e=>{
   targetSum=parseFloat(e.target.value);
@@ -437,7 +522,6 @@ document.getElementById('targetSumInput').addEventListener('input', e=>{
   resetTrialState();
 });
 
-// Updated runTrials to optionally keep current sticks
 function runTrials(n, reset=true){
   if(reset) resetTrialState();
   for(let t=0;t<n;t++){
@@ -453,10 +537,7 @@ function runTrials(n, reset=true){
 
 drawBase();
 updateHistogram();
-
-
 </script>
 
 </body>
-
 </html>
