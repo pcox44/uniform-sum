@@ -48,7 +48,6 @@ h1 {
   margin-bottom: 12px;
 }
 
-/* Updated Controls Section */
 #controls {
   margin: 12px 0;
   text-align: left;
@@ -66,8 +65,8 @@ label {
   font-weight: bold;
   color: #b3e5fc;
   margin-left: 10px;
-  font-size: 26px; /* increased from 16px */
-  text-shadow: 0 0 8px rgba(0,255,255,0.8); /* stronger glow for readability */
+  font-size: 26px; 
+  text-shadow: 0 0 8px rgba(0,255,255,0.8); 
 }
 
 input[type="number"] {
@@ -88,7 +87,6 @@ input[type="number"]:focus {
   box-shadow: 0 0 10px rgba(0,255,255,0.7), inset 0 0 8px rgba(0,255,255,0.3);
 }
 
-/* Buttons */
 button { 
   margin: 5px 5px 5px 0; 
   padding: 10px 20px; 
@@ -111,7 +109,7 @@ canvas { display: block; margin: 8px 0; border-radius: 10px; }
 #histCanvas { width: 100%; height: 240px; }
 
 #stats, #lastTrialBox {
-  padding: 30px;
+  padding: 20px;
   background: rgba(40,40,60,0.95);
   border-radius: 12px;
   color: #fff;
@@ -141,8 +139,8 @@ canvas { display: block; margin: 8px 0; border-radius: 10px; }
       <button id="dropStick">Drop One Stick</button>
       <button id="dropOneTrial">Run 1 Trial</button>
       <button id="drop10">Run 10</button>
-      <button id="drop100">Run 100</button>
       <button id="drop1000">Run 1000</button>
+      <button id="resetHist">Reset</button>
       <label for="targetSumInput">Target:</label>
       <input type="number" id="targetSumInput" value="1" step="0.01" min="0.01">
     </div>
@@ -182,17 +180,9 @@ let currentSticks = [], currentSum = 0;
 let trialResults = [], lastStickIndices = [];
 let dropOneActive = false; 
 
-// Fixed first 9 neon colors, 9th is neon green
 const firstNeonColors = [
-  '#ff9800', // orange
-  '#00ff00', // lime green
-  '#ff00ff', // neon purple
-  '#ff1744', // neon red
-  '#00FFFF', // neon blue
-  '#ff6d00 ', // bright green
-  '#ffeb3b', // yellow
-  '#FF8DA1', // orange-red
-  '#00ff00'  // neon green
+  '#ff9800', '#00ff00', '#ff00ff', '#ff1744', '#00FFFF', 
+  '#ff6d00', '#ffeb3b', '#FF8DA1', '#00ff00'
 ];
 
 function getStickColor(index){
@@ -203,6 +193,7 @@ function getStickColor(index){
 function drawBase(){ 
   ctx.clearRect(0,0,stickCanvas.width,stickCanvas.height);
   const baseY = stickCanvas.height - 40;
+  
   ctx.strokeStyle="#aaa"; 
   ctx.lineWidth=3; 
   ctx.beginPath(); 
@@ -210,7 +201,6 @@ function drawBase(){
   ctx.lineTo(stickCanvas.width,baseY); 
   ctx.stroke(); 
 
-  // Checkerboard finish line
   const boxSize = 8;
   for(let y=0;y<stickCanvas.height;y+=boxSize){
     for(let x=stickCanvas.width-20;x<stickCanvas.width;x+=boxSize*2){
@@ -220,6 +210,7 @@ function drawBase(){
       ctx.fillRect(x+boxSize,y,boxSize,boxSize);
     }
   }
+
   return baseY;
 }
 
@@ -227,15 +218,13 @@ function drawStickSegment(x,width,y,index,val,isLast=false){
   const color = getStickColor(index);
   ctx.fillStyle=color;
   ctx.fillRect(x,y,width,28);
-
   ctx.lineWidth=6;
   ctx.strokeStyle='black';
   ctx.strokeRect(x,y,width,28);
-
   const fontSize = Math.min(16, Math.max(12, width*0.3 + 8));
   ctx.font=`bold ${fontSize}px Segoe UI`;
   ctx.textBaseline='middle';
-  ctx.fillStyle='#000'; // black numbers
+  ctx.fillStyle='#000';
   ctx.textAlign=isLast?'left':'center';
   const cy = y+14;
   ctx.fillText(val.toFixed(2), isLast ? x+2 : x+width/2, cy);
@@ -253,8 +242,7 @@ async function dropStickAnimated(len,index){
       drawBase();
       let px=0;
       for(let i=0;i<index;i++){
-        const lastCheck = currentSticks.slice(0,i+1).reduce((a,b)=>a+b,0) > targetSum;
-        drawStickSegment(px, currentSticks[i]*scale, baseY-28, i, currentSticks[i], lastCheck);
+        drawStickSegment(px, currentSticks[i]*scale, baseY-28, i, currentSticks[i]);
         px += currentSticks[i]*scale;
       }
       if(y<baseY-28){ y+=20; drawStickSegment(px, stickWidth, y, index, len, isLast); requestAnimationFrame(fall);}
@@ -274,29 +262,6 @@ function endTrial(){
   updateLastTrialBox();
 }
 
-function updateHistogram(){
-  histCtx.clearRect(0,0,histCanvas.width,histCanvas.height);
-  const baseY = histCanvas.height-40;
-  const maxVal = Math.max(...trialResults,10);
-  const labels = Array.from({length:maxVal},(_,i)=>i+1);
-  const barWidth = histCanvas.width / labels.length * 0.8;
-  const maxCount = Math.max(...labels.map(l=>trialResults.filter(v=>v===l).length),1);
-
-  labels.forEach((label,i)=>{
-    const count = trialResults.filter(v=>v===label).length;
-    const color = getStickColor(label-1);
-    const h = count / maxCount * (histCanvas.height-60);
-    histCtx.fillStyle=color;
-    histCtx.fillRect(i*(histCanvas.width/labels.length)+barWidth*0.1, baseY-h, barWidth, h);
-
-    histCtx.fillStyle="#fff";
-    histCtx.font='bold 14px Segoe UI';
-    histCtx.textAlign='center';
-    histCtx.textBaseline='top';
-    histCtx.fillText(label, i*(histCanvas.width/labels.length)+barWidth/2, baseY+4);
-  });
-}
-
 function updateStats(){
   if(trialResults.length===0){ statsDiv.innerHTML=''; return; }
   const n = trialResults.length;
@@ -305,7 +270,7 @@ function updateStats(){
   if(targetSum===1 || targetSum===2){
     const theoretical = targetSum===1?2.7183:4.6708;
     html += `<strong>Theoretical:</strong> ${theoretical}<br>`;
-    html += `<strong>|Simulation - Theoretical|:</strong> ${Math.abs(avg-theoretical).toFixed(4)}`;
+    html += `<strong>|Simulation - Theoretical|:</strong> ${Math.abs(avg-theoretical).toFixed(4)}<br>`;
   }
   statsDiv.innerHTML=html;
 }
@@ -321,14 +286,12 @@ function updateLastTrialBox(){
     sum += v;
     const isLast = sum > targetSum;
     const color = getStickColor(i);
-
     content += `<span class="stickSpan" style="
       color:${color}; 
       font-weight: bold;
       padding:2px 4px;
       border-radius:2px;
-      ${isLast ? `border: 2px solid ${color};` : ''}
-    ">${v.toFixed(3)}</span> `;
+      ${isLast ? `border: 2px solid ${color};` : ''}">${v.toFixed(3)}</span> `;
   });
 
   lastTrialBox.innerHTML = `<strong>Last trial calculation:</strong><br>${content}<br>
@@ -336,8 +299,72 @@ function updateLastTrialBox(){
     <span style="margin-left:50px;"><strong>Sticks used:</strong> ${currentSticks.length}</span>`;
 }
 
+// ---------------------- Histogram ----------------------
+function updateHistogram() {
+  histCtx.clearRect(0,0,histCanvas.width,histCanvas.height);
 
-// BUTTONS
+  const topPadding = 40;
+  const bottomPadding = 60;
+  const leftPadding = 70;
+  const rightPadding = 20;
+
+  const plotWidth = histCanvas.width - leftPadding - rightPadding;
+  const plotHeight = histCanvas.height - topPadding - bottomPadding;
+
+  if(trialResults.length===0) return;
+
+  const maxVal = Math.max(...trialResults, 10);
+  const labels = Array.from({length:maxVal},(_,i)=>i+1);
+
+  const counts = labels.map(l => trialResults.filter(v => v === l).length);
+  const proportions = counts.map(c => c / trialResults.length);
+  // New: 10% padding above the highest proportion
+  const maxProp = Math.max(...proportions);
+  const yMax = maxProp * 1.1;  // 10% higher than max
+
+  const barWidth = plotWidth / labels.length * 0.8;
+
+  // Horizontal grid lines
+  histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+  histCtx.lineWidth = 1;
+  histCtx.font = '14px Segoe UI';
+  histCtx.fillStyle = '#fff';
+  histCtx.textAlign = 'right';
+  histCtx.textBaseline = 'middle';
+  for(let i=0;i<=5;i++){
+    const yVal = i/5 * yMax;
+    const yPos = topPadding + plotHeight - (yVal/yMax * plotHeight);
+    histCtx.beginPath();
+    histCtx.moveTo(leftPadding, yPos);
+    histCtx.lineTo(histCanvas.width-rightPadding, yPos);
+    histCtx.stroke();
+    histCtx.fillText(yVal.toFixed(2), leftPadding-5, yPos);
+  }
+
+  // Bars
+  labels.forEach((label,i)=>{
+    const count = counts[i];
+    const proportion = proportions[i];
+    const h = proportion / yMax * plotHeight;
+    const color = getStickColor(label-1);
+    histCtx.fillStyle = color;
+    histCtx.fillRect(leftPadding + i*(plotWidth/labels.length)+barWidth*0.1,
+                     topPadding + plotHeight - h,
+                     barWidth,
+                     h);
+    // x-axis stick number
+    histCtx.fillStyle = '#fff';
+    histCtx.textAlign = 'center';
+    histCtx.textBaseline = 'top';
+    histCtx.fillText(label, leftPadding + i*(plotWidth/labels.length)+barWidth/2, topPadding + plotHeight + 5);
+  });
+
+  histCtx.textAlign = 'center';
+  histCtx.textBaseline = 'top';
+  histCtx.fillText('Sticks Needed', leftPadding + plotWidth/2, histCanvas.height - bottomPadding + 20);
+}
+
+// ---------------------- Button Events ----------------------
 document.getElementById('dropStick').onclick = async()=>{
   if(!dropOneActive){ resetTrialState(); dropOneActive=true; }
   const len=Math.random();
@@ -359,11 +386,23 @@ document.getElementById('dropOneTrial').onclick = async()=>{
   endTrial();
 };
 
-document.getElementById('drop10').onclick = ()=>runTrials(10);
-document.getElementById('drop100').onclick = ()=>runTrials(100);
-document.getElementById('drop1000').onclick = ()=>runTrials(1000);
+// Additive trial buttons
+document.getElementById('drop10').onclick = ()=>runTrials(10, false);
+document.getElementById('drop1000').onclick = ()=>runTrials(1000, false);
 
-function runTrials(n){
+// Reset button
+document.getElementById('resetHist').onclick = ()=>{ trialResults=[]; updateHistogram(); resetTrialState(); };
+
+document.getElementById('targetSumInput').addEventListener('input', e=>{
+  targetSum=parseFloat(e.target.value);
+  trialResults=[]; 
+  updateHistogram();
+  resetTrialState();
+});
+
+// Updated runTrials to optionally keep current sticks
+function runTrials(n, reset=true){
+  if(reset) resetTrialState();
   for(let t=0;t<n;t++){
     let s=0,count=0;
     while(s<=targetSum){s+=Math.random();count++;}
@@ -372,24 +411,16 @@ function runTrials(n){
   }
   updateHistogram();
   updateStats();
-  updateLastTrialBox();
+  if(reset) resetTrialState();
 }
 
-document.getElementById('targetSumInput').onchange = e=>{
-  targetSum=parseFloat(e.target.value);
-  resetTrialState();
-  trialResults=[];
-  lastStickIndices=[];
-  updateHistogram();
-  updateStats();
-  updateLastTrialBox();
-};
-
-// INIT
-resetTrialState();
+drawBase();
 updateHistogram();
-updateStats();
-updateLastTrialBox();
+
+
+
+
 </script>
+
 </body>
 </html>
