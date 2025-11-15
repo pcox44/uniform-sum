@@ -328,7 +328,7 @@ function drawStickSegment(x, width, y, index, val, isLast=false){
 
   if(isLast){
     const spaceRight = stickCanvas.width - x; // pixels from stick start to canvas edge
-    if(spaceRight < width/2){
+    if(spaceRight < width*0.4){
       // Less than half showing -> shift label left with extra padding
       ctx.textAlign = 'left';
       const leftPadding = 50; // extra padding when left-aligned
