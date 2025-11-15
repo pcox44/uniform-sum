@@ -180,10 +180,10 @@ canvas { display: block; margin: 8px 0; border-radius: 10px; }
 </head>
 <body>
 
-<h1>Uniform Sum Simulation for e</h1>
+<h1>Uniform Sum Simulation</h1>
 
 <div id="topDesc">
-  <strong>Process:</strong> Pick random numbers (0–1) end-to-end until they exceed the target. Count how many sticks were needed.
+  <strong>Process:</strong> Independently select uniform random numbers on [0–1]. Lay sticks representing those numbers end-to-end until they exceed the target. Count how many sticks were needed.
 </div>
 
 <canvas id="stickCanvas" width="1000" height="220"></canvas>
@@ -205,8 +205,9 @@ canvas { display: block; margin: 8px 0; border-radius: 10px; }
     </div>
 
     <!-- Collapsible histogram table -->
-    <button class="collapsible">Show/Hide Frequency Table</button>
-    <div class="collapsible-content" id="histTableContainer"></div>
+     <!-- Histogram table: always visible -->
+	<div id="histTableContainer" style="display:block;"></div>
+
   </div>
 
   <div class="right-panel">
@@ -216,17 +217,23 @@ canvas { display: block; margin: 8px 0; border-radius: 10px; }
 </div>
 
 <!-- Collapsible explanation -->
-<div id="explanation" style="margin-top:10px;">
-
-  <strong>Why it’s e:</strong>
+<button class="collapsible" style="width:200px; margin-bottom:6px;">Explanation</button>
+<div class="collapsible-content" style="width:95%; max-width:1600px; margin-bottom:12px;">
   <p>
-    Pick independent random numbers X₁, X₂, … from 0 to 1. Let N be the smallest number so that X₁ + … + X<sub>N</sub> exceeds the target.
-  </p>
-  <p>
+    Pick independent random numbers X₁, X₂, … from 0 to 1. Let N be the smallest number so that X₁ + … + X<sub>N</sub> exceeds the target.  
     For a target of 1, the probability that the sum first exceeds 1 exactly on the nth number is 1/n!.  
     Therefore, the expected number of numbers needed is approximately e.
   </p>
+
+  <p><strong>Simplex Explanation:</strong></p>
+  <p>
+    Consider the n-dimensional simplex defined by X₁ + X₂ + … + X<sub>n</sub> ≤ 1 with all X<sub>i</sub> ≥ 0.  
+    The volume of this simplex is 1/n!, which matches the probability that the nth random number is the one to exceed the target.
+  </p>
 </div>
+
+
+
 
 <script>
 // Collapsible toggle
