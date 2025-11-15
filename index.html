@@ -26,7 +26,7 @@ h1 {
 }
 #stickCanvas {
   width: 100%;
-  height: 150px;
+  height: 110px;
   background: rgba(20,20,40,0.9);
   display: block;
   border-radius: 10px;
@@ -157,6 +157,23 @@ canvas { display: block; margin: 8px 0; border-radius: 10px; }
   content: '\25B2';
 }
 
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .container { flex-direction: column; }
+  .left-panel, .right-panel { flex: 1 1 100%; min-width: 0; }
+  #stickCanvas, #histCanvas { width: 100% !important; height: auto !important; }
+  button { font-size: 14px; padding: 8px 12px; }
+  label { font-size: 20px; }
+}
+
+@media (max-width: 480px) {
+  #stickCanvas { height: 120px !important; }
+  #histCanvas { height: 180px !important; }
+  button { font-size: 12px; padding: 6px 10px; }
+  label { font-size: 16px; }
+}
+
+
 .collapsible-content { display: none; }
 </style>
 </head>
@@ -198,8 +215,8 @@ canvas { display: block; margin: 8px 0; border-radius: 10px; }
 </div>
 
 <!-- Collapsible explanation -->
-<button class="collapsible">Show/Hide Explanation</button>
-<div class="collapsible-content" id="explanation">
+<div id="explanation" style="margin-top:10px;">
+
   <strong>Why it’s e:</strong>
   <p>
     Pick independent random numbers X₁, X₂, … from 0 to 1. Let N be the smallest number so that X₁ + … + X<sub>N</sub> exceeds the target.
@@ -244,55 +261,85 @@ function getStickColor(index){if(index < firstNeonColors.length) return firstNeo
 
 // ----- Updated drawBase() -----
 function drawBase(){ 
-  ctx.clearRect(0,0,stickCanvas.width,stickCanvas.height);
-  const baseY = stickCanvas.height - 50; // slightly higher for taller sticks
-  ctx.strokeStyle="#aaa"; 
-  ctx.lineWidth=3; 
-  ctx.beginPath(); 
-  ctx.moveTo(0,baseY); 
-  ctx.lineTo(stickCanvas.width,baseY); 
+  ctx.clearRect(0, 0, stickCanvas.width, stickCanvas.height);
+
+  const baseY = stickCanvas.height - 50;
+
+  // Scale to map stick sums to canvas width
+  const overflowFraction = 0.10; // a bit extra so sticks don't hit edge
+  const maxSum = targetSum * (1 + overflowFraction);
+  const scale = stickCanvas.width / maxSum;
+
+  const checkerStartX = targetSum * scale;
+  const checkerEndX = stickCanvas.width; // go all the way to the right
+  const checkerWidth = checkerEndX - checkerStartX;
+  const checkerHeight = stickCanvas.height; // full vertical
+
+  // Base line
+  ctx.strokeStyle = "#aaa";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, baseY);
+  ctx.lineTo(stickCanvas.width, baseY);
   ctx.stroke();
 
+  // Checkerboard
   const boxSize = 8;
-  const checkerStartX = stickCanvas.width - 60; // wider checkerboard
-  for(let y=0; y<stickCanvas.height; y+=boxSize){
-    for(let x=checkerStartX; x<stickCanvas.width; x+=boxSize*2){
-      ctx.fillStyle = (Math.floor(y/boxSize)%2===0) ? "#fff" : "#000";
+  for (let y = 0; y < checkerHeight; y += boxSize) {
+    let toggle = Math.floor(y / boxSize) % 2 === 0;
+    for (let x = checkerStartX; x < checkerEndX; x += boxSize) {
+      ctx.fillStyle = toggle ? "#fff" : "#000";
       ctx.fillRect(x, y, boxSize, boxSize);
-      ctx.fillStyle = (Math.floor(y/boxSize)%2===0) ? "#000" : "#fff";
-      ctx.fillRect(x+boxSize, y, boxSize, boxSize);
+      toggle = !toggle;
     }
   }
 
   return baseY;
 }
 
+
+
+
 // ----- Updated drawStickSegment() -----
 function drawStickSegment(x, width, y, index, val, isLast=false){
-  const stickHeight = 50; // taller sticks
+  const stickHeight = 50;
   const color = getStickColor(index);
+
+  // Draw stick
   ctx.fillStyle = color;
   ctx.fillRect(x, y, width, stickHeight);
+
   ctx.lineWidth = 6;
   ctx.strokeStyle = 'black';
   ctx.strokeRect(x, y, width, stickHeight);
 
-  // font size proportional to stick height
-  const fontSize = Math.min(24, Math.max(14, stickHeight * 0.6));
+  // ===== TEXT SIZE LOGIC =====
+  let fontSize;
+
+  if (val < 0.03) {
+    // For very small sticks, shrink text
+    fontSize = 10;         // <--- tweak to taste
+  } else {
+    // Normal dynamic text size
+    fontSize = Math.min(24, Math.max(14, stickHeight * 0.6));
+  }
+  // ============================
+
   ctx.font = `bold ${fontSize}px Segoe UI`;
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#000';
 
   const cy = y + stickHeight / 2;
-  const leftPadding = 20; // extra padding for last stick
+  const leftPadding = 40;
+
   ctx.textAlign = isLast ? 'left' : 'center';
-  ctx.fillText(val.toFixed(2), isLast ? x + leftPadding : x + width / 2, cy);
+  ctx.fillText(val.toFixed(2), isLast ? x + leftPadding : x + width/2, cy);
 }
 
 
 async function dropStickAnimated(len, index){
   const baseY = drawBase();
-  const scale = stickCanvas.width / targetSum;
+  const scale = stickCanvas.width / (targetSum + targetSum * 0.1);
   const stickWidth = len * scale;
   const x = currentSticks.slice(0,index).reduce((a,b)=>a+b,0) * scale;
 
@@ -584,6 +631,18 @@ updateHistogram();
 
 drawBase();
 updateHistogram();
+
+// Make canvases responsive
+function resizeCanvases(){
+    fixCanvasDPI(stickCanvas, ctx);
+    fixCanvasDPI(histCanvas, histCtx);
+    drawBase();
+    updateHistogram();
+}
+window.addEventListener('resize', resizeCanvases);
+resizeCanvases(); // call once on load
+
+
 </script>
 
 </body>
