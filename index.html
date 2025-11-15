@@ -356,7 +356,7 @@ async function dropStickAnimated(len, index){
       }
 
       if(y < baseY-28){
-        y += 20;
+        y += 10;
         drawStickSegment(px, stickWidth, y, index, len, false); // false during fall
         requestAnimationFrame(fall);
       } else {
