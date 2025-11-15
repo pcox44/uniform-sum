@@ -313,28 +313,36 @@ function drawStickSegment(x, width, y, index, val, isLast=false){
   ctx.strokeStyle = 'black';
   ctx.strokeRect(x, y, width, stickHeight);
 
-  // ===== TEXT SIZE LOGIC =====
-  let fontSize;
-
-  if (val < 0.03) {
-    // For very small sticks, shrink text
-    fontSize = 10;         // <--- tweak to taste
-  } else {
-    // Normal dynamic text size
-    fontSize = Math.min(24, Math.max(14, stickHeight * 0.6));
-  }
-  // ============================
-
+  // Text size logic
+  let fontSize = (val < 0.03) ? 10 : Math.min(24, Math.max(14, stickHeight * 0.6));
   ctx.font = `bold ${fontSize}px Segoe UI`;
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#000';
 
   const cy = y + stickHeight / 2;
-  const leftPadding = 40;
 
-  ctx.textAlign = isLast ? 'left' : 'center';
-  ctx.fillText(val.toFixed(2), isLast ? x + leftPadding : x + width/2, cy);
+  // Default: center label
+  let textX = x + width/2;
+  ctx.textAlign = 'center';
+
+  if(isLast){
+    const spaceRight = stickCanvas.width - x; // pixels from stick start to canvas edge
+    if(spaceRight < width/2){
+      // Less than half showing -> shift label left with extra padding
+      ctx.textAlign = 'left';
+      const leftPadding = 20; // extra padding when left-aligned
+      textX = x + leftPadding;
+    } else {
+      // More than half showing -> center label
+      ctx.textAlign = 'center';
+      textX = x + width/2;
+    }
+  }
+
+  ctx.fillText(val.toFixed(2), textX, cy);
 }
+
+
 
 
 async function dropStickAnimated(len, index){
