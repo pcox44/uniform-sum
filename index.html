@@ -71,7 +71,7 @@ input[type="number"] {
   padding: 8px 12px;
   color: #fff;
   font-size: 16px;
-  width: 80px;
+  width: 40px;
   transition: all 0.3s ease;
   outline: none;
   box-shadow: inset 0 0 6px rgba(0,255,255,0.2);
@@ -176,6 +176,21 @@ canvas { display: block; margin: 8px 0; border-radius: 10px; }
 
 
 .collapsible-content { display: none; }
+
+/* Remove arrows and center number in target input */
+#targetSumInput {
+  -moz-appearance: textfield; /* Firefox */
+  appearance: textfield;      /* Standard */
+  text-align: center;         /* Center the number */
+}
+
+#targetSumInput::-webkit-outer-spin-button,
+#targetSumInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+
 </style>
 </head>
 <body>
@@ -262,7 +277,7 @@ let dropOneActive = false;
 
 const firstNeonColors = [
   '#ff9800', '#00ff00', '#ff00ff', '#ff1744', '#00FFFF', 
-  '#ff6d00', '#ffeb3b', '#FF8DA1', '#00ff00'
+  '#B57EDC', '#ffeb3b', '#FF8DA1', '#0096FF'
 ];
 
 function getStickColor(index){if(index < firstNeonColors.length) return firstNeonColors[index]; return firstNeonColors[(index - firstNeonColors.length) % firstNeonColors.length];}
@@ -322,7 +337,7 @@ function drawStickSegment(x, width, y, index, val, isLast=false){
   ctx.strokeRect(x, y, width, stickHeight);
 
   // Text size logic
-  let fontSize = (val < 0.03) ? 10 : Math.min(24, Math.max(14, stickHeight * 0.6));
+  let fontSize = (val < 0.02) ? 10 : Math.min(24, Math.max(14, stickHeight * 0.6));
   ctx.font = `bold ${fontSize}px Segoe UI`;
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#000';
