@@ -331,7 +331,7 @@ function drawStickSegment(x, width, y, index, val, isLast=false){
     if(spaceRight < width/2){
       // Less than half showing -> shift label left with extra padding
       ctx.textAlign = 'left';
-      const leftPadding = 20; // extra padding when left-aligned
+      const leftPadding = 50; // extra padding when left-aligned
       textX = x + leftPadding;
     } else {
       // More than half showing -> center label
