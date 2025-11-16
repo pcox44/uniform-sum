@@ -349,7 +349,7 @@ function drawStickSegment(x, width, y, index, val, isLast=false){
   ctx.textAlign = 'center';
 
   if(isLast){
-    const spaceRight = stickCanvas.width - x; // pixels from stick start to canvas edge
+    const spaceRight = stickCanvas.width - (x + width); // pixels from stick start to canvas edge
     if(spaceRight < width*0.6){
       // Less than half showing -> shift label left with extra padding
       ctx.textAlign = 'left';
@@ -648,6 +648,7 @@ function fixCanvasDPI(canvas, ctx) {
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset previous scaling
     ctx.scale(dpr, dpr);
 }
 
