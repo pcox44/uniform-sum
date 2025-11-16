@@ -643,12 +643,17 @@ function runTrials(n, reset=true){
 }
 
 // ----- Fix canvas for high-DPI / sharp text -----
-function fixCanvasDPI(canvas, ctx) {
+function fixCanvasDPIIfMobile(canvas, ctx) {
+    const isMobile = window.innerWidth <= 768; // tweak breakpoint if needed
+    if(!isMobile) return; // leave desktop as is
+
     const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
+    const rect = canvas.getBoundingClientRect(); // CSS size
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
-    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset previous scaling
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    ctx.setTransform(1,0,0,1,0,0);
     ctx.scale(dpr, dpr);
 }
 
@@ -666,8 +671,8 @@ updateHistogram();
 
 // Make canvases responsive
 function resizeCanvases(){
-    fixCanvasDPI(stickCanvas, ctx);
-    fixCanvasDPI(histCanvas, histCtx);
+    fixCanvasDPIIfMobile(stickCanvas, ctx);
+    fixCanvasDPIIfMobile(histCanvas, histCtx);
     drawBase();
     updateHistogram();
 }
