@@ -349,7 +349,7 @@ function drawStickSegment(x, width, y, index, val, isLast=false){
   ctx.textAlign = 'center';
 
   if(isLast){
-    const spaceRight = stickCanvas.width - (x + width); // pixels from stick start to canvas edge
+    const spaceRight = stickCanvas.width - x; // pixels from stick start to canvas edge
     if(spaceRight < width*0.6){
       // Less than half showing -> shift label left with extra padding
       ctx.textAlign = 'left';
@@ -643,17 +643,11 @@ function runTrials(n, reset=true){
 }
 
 // ----- Fix canvas for high-DPI / sharp text -----
-function fixCanvasDPIIfMobile(canvas, ctx) {
-    const isMobile = window.innerWidth <= 768; // tweak breakpoint if needed
-    if(!isMobile) return; // leave desktop as is
-
+function fixCanvasDPI(canvas, ctx) {
     const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect(); // CSS size
+    const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
-    canvas.style.width = rect.width + 'px';
-    canvas.style.height = rect.height + 'px';
-    ctx.setTransform(1,0,0,1,0,0);
     ctx.scale(dpr, dpr);
 }
 
@@ -671,8 +665,8 @@ updateHistogram();
 
 // Make canvases responsive
 function resizeCanvases(){
-    fixCanvasDPIIfMobile(stickCanvas, ctx);
-    fixCanvasDPIIfMobile(histCanvas, histCtx);
+    fixCanvasDPI(stickCanvas, ctx);
+    fixCanvasDPI(histCanvas, histCtx);
     drawBase();
     updateHistogram();
 }
