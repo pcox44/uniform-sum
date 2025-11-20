@@ -9,18 +9,18 @@
 
 /* Target input styling */
 #targetSumInput {
+  width: 80px;           /* make it wider */
+  text-align: center;    /* center the number */
+  font-size: 20px;       /* optional: make the number bigger */
+  padding: 6px 10px;     /* slightly bigger padding */
+  border-radius: 8px;
+  border: 2px solid #26a69a;
   background: rgba(10,10,30,0.9);
-  border: 3px solid #26a69a;   /* slightly thicker border */
-  border-radius: 10px;
-  padding: 10px 16px;           /* bigger padding */
   color: #fff;
-  font-size: 22px;              /* bigger number text */
-  width: 70px;                  /* wider box */
-  text-align: center;
   outline: none;
   box-shadow: inset 0 0 6px rgba(0,255,255,0.2);
-  transition: all 0.3s ease;
 }
+
 
 #topDesc {
   padding: 10px 16px;
@@ -201,6 +201,21 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
   #stickCanvas { height: 90px; }
   #histCanvas { height: 160px; }
 }
+
+/* Hide histogram on small screens */
+@media (max-width: 768px) {
+  #histCanvas {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  #stickCanvas {
+    height: 200px !important;  /* taller so sticks are visible */
+  }
+}
+
+
 </style>
 </head>
 
@@ -305,7 +320,7 @@ function drawBase() {
 
 
 function drawStickSegment(x, width, y, index, val, isLast=false){
-  const stickHeight = 60; // adjust height as you like
+  const stickHeight = stickCanvas.height * 0.5; // 50% of canvas height; // adjust height as you like
   const color = getStickColor(index);
 
   // Draw stick
@@ -449,13 +464,29 @@ function updateHistogram() {
   const plotWidth = histCanvas.width - leftPadding - rightPadding;
   const plotHeight = histCanvas.height - topPadding - bottomPadding;
 
-  if(trialResults.length === 0) {
+  if(trialResults.length===0) {
     updateHistTable();
     return;
   }
 
-  const maxVal = Math.max(...trialResults, 10);
-  const labels = Array.from({length:maxVal},(_,i)=>i+1);
+  let labels, maxVal;
+
+  if(targetSum > 4){
+    // Only show results actually observed
+    const observed = trialResults.filter(v => v > 0);
+    const minObserved = Math.min(...observed);
+    const maxObserved = Math.max(...observed);
+
+    const start = Math.max(1, minObserved - 3); // 3 less than lowest
+    labels = [];
+    for(let l = start; l <= maxObserved; l++){
+      if(trialResults.includes(l)) labels.push(l);
+    }
+    maxVal = Math.max(...labels);
+  } else {
+    maxVal = Math.max(...trialResults, 10);
+    labels = Array.from({length:maxVal},(_,i)=>i+1);
+  }
 
   const counts = labels.map(l => trialResults.filter(v => v === l).length);
   const proportions = counts.map(c => c / trialResults.length);
@@ -464,7 +495,7 @@ function updateHistogram() {
 
   const barWidth = plotWidth / labels.length * 0.8;
 
-  // Draw horizontal grid lines & Y-axis labels
+  // Draw horizontal grid lines
   histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
   histCtx.lineWidth = 1;
   histCtx.font = '14px Segoe UI';
@@ -474,15 +505,15 @@ function updateHistogram() {
 
   const ySteps = 5;
   for(let i = 0; i <= ySteps; i++) {
-    const prop = (i / ySteps) * maxProp;
-    const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
+      const prop = (i / ySteps) * maxProp;
+      const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
 
-    histCtx.beginPath();
-    histCtx.moveTo(leftPadding, yPos);
-    histCtx.lineTo(histCanvas.width - rightPadding, yPos);
-    histCtx.stroke();
+      histCtx.beginPath();
+      histCtx.moveTo(leftPadding, yPos);
+      histCtx.lineTo(histCanvas.width - rightPadding, yPos);
+      histCtx.stroke();
 
-    histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos);
+      histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos);
   }
 
   // Y-axis label
@@ -496,28 +527,24 @@ function updateHistogram() {
   histCtx.fillText('Proportion', 0, 0);
   histCtx.restore();
 
-  // Draw bars & X-axis labels
+  // Draw bars
   labels.forEach((label,i)=>{
     const count = counts[i];
     const proportion = proportions[i];
     const h = proportion / yMax * plotHeight;
     const color = getStickColor(label-1);
-
-    // Bar
     histCtx.fillStyle = color;
     histCtx.fillRect(leftPadding + i*(plotWidth/labels.length)+barWidth*0.1,
                      topPadding + plotHeight - h,
                      barWidth,
                      h);
-
-    // X-axis labels
     histCtx.fillStyle = '#fff';
     histCtx.textAlign = 'center';
     histCtx.textBaseline = 'top';
     histCtx.fillText(label, leftPadding + i*(plotWidth/labels.length)+barWidth/2, topPadding + plotHeight + 5);
   });
 
-  // X-axis main label
+  // X-axis label
   histCtx.textAlign = 'center';
   histCtx.textBaseline = 'top';
   histCtx.fillText('Sticks Needed', leftPadding + plotWidth/2, histCanvas.height - bottomPadding + 20);
@@ -560,6 +587,8 @@ fixCanvasDPI(stickCanvas,ctx); fixCanvasDPI(histCanvas,histCtx);
 drawBase(); updateHistogram();
 
 window.addEventListener('resize',()=>{ fixCanvasDPI(stickCanvas,ctx); fixCanvasDPI(histCanvas,histCtx); drawBase(); updateHistogram(); });
+
+
 </script>
 
 </body>
