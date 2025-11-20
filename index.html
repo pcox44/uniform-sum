@@ -79,6 +79,25 @@ body {
   padding: 20px;
 }
 
+/* Force a wide content area to preserve 2-column layout and canvases */
+body {
+  overflow-x: auto;   /* horizontal scroll if needed */
+  overflow-y: auto;
+  min-width: 1000px;  /* adjust as needed to fit your canvases & columns */
+}
+
+/* Ensure container preserves layout */
+.container {
+  min-width: 1000px;  /* match or slightly less than body min-width */
+}
+
+/* Canvases scale within desktop but maintain minimum width */
+#stickCanvas, #histCanvas {
+  min-width: 800px;   /* ensures the canvas doesn’t shrink too small */
+  max-width: 100%;
+}
+
+
 h1 { 
   text-align: center;
   font-size: clamp(28px,5vw,48px);
@@ -202,6 +221,13 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
   #histCanvas { height: 160px; }
 }
 
+@media (max-width: 768px) {
+  #stickCanvas,
+  #histBox,
+  #histTableContainer {
+    display: none;
+  }
+}
 
 
 @media (max-width: 768px) {
