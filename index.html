@@ -202,18 +202,14 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
   #histCanvas { height: 160px; }
 }
 
-/* Hide histogram on small screens */
+
+
 @media (max-width: 768px) {
-  #histCanvas {
-    display: none !important;
+  body {
+    min-width: 800px;  /* ensures the content can scroll horizontally */
   }
 }
 
-@media (max-width: 768px) {
-  #stickCanvas {
-    height: 200px !important;  /* taller so sticks are visible */
-  }
-}
 
 
 </style>
@@ -319,8 +315,8 @@ function drawBase() {
 }
 
 
-function drawStickSegment(x, width, y, index, val, isLast=false){
-  const stickHeight = stickCanvas.height * 0.5; // 50% of canvas height; // adjust height as you like
+function drawStickSegment(x, width, y, index, val, isLast=false) {
+  const stickHeight = stickCanvas.height * 0.50;
   const color = getStickColor(index);
 
   // Draw stick
@@ -331,29 +327,27 @@ function drawStickSegment(x, width, y, index, val, isLast=false){
   ctx.strokeStyle = 'black';
   ctx.strokeRect(x, y, width, stickHeight);
 
-  // Text
-  let fontSize = (val < 0.02) ? 10 : Math.min(24, Math.max(14, stickHeight * 0.4));
+  // Text size
+  let fontSize = (val < 0.02) ? 10 : Math.min(24, Math.max(14, stickHeight * 0.6));
   ctx.font = `bold ${fontSize}px Segoe UI`;
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#000';
 
   const cy = y + stickHeight / 2;
-  let textX;
-  if(isLast){
-    const spaceRight = stickCanvas.width - x; // pixels from stick start to canvas edge
-    if(spaceRight < width / 2){
-      // Less than half showing -> shift label left
-      ctx.textAlign = 'left';
-      const leftPadding = 20;
-      textX = x + leftPadding;
-    } else {
-      // More than half visible -> center label
-      ctx.textAlign = 'center';
-      textX = x + width/2;
-    }
-  } else {
+
+  // Default: center
+  let textX = x + width / 2;
+  ctx.textAlign = 'center';
+
+  if (isLast) {
+    const canvasRight = stickCanvas.width;
+    const stickEnd = x + width;
+    const visibleWidth = Math.min(width, canvasRight - x); // how much is visible
+
+    // proportional offset: if fully visible, center; if partially off, shift left proportionally
+    const fractionVisible = visibleWidth / width;
+    textX = x + width * Math.min(fractionVisible, 0.9) / 2; // don't go all the way left
     ctx.textAlign = 'center';
-    textX = x + width/2;
   }
 
   ctx.fillText(val.toFixed(2), textX, cy);
