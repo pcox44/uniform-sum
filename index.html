@@ -115,12 +115,12 @@ h1 {
 }
 
 .left-panel {
-  flex: 0 0 67%; /* 60% width */
+  flex: 0 0 75%; /* 60% width */
   min-width: 300px;
 }
 
 .right-panel {
-  flex: 0 0 33%; /* 40% width */
+  flex: 0 0 25%; /* 40% width */
   min-width: 300px;
 }
 
@@ -450,7 +450,7 @@ function updateHistTable() {
       <tr>
         <th style="border:1px solid #fff; padding:6px;">Sticks</th>
         <th style="border:1px solid #fff; padding:6px;">Count</th>
-        <th style="border:1px solid #fff; padding:6px;">Rel. Freq</th>
+        <th style="border:1px solid #fff; padding:6px;">Relative Frequency</th>
         <th style="border:1px solid #fff; padding:6px;">Running Sum</th>
       </tr>`;
 
@@ -497,15 +497,18 @@ function updateHistogram() {
   let labels, maxVal;
 
   if(targetSum > 4){
-    // Only show results actually observed
+    // Only show results actually observed, but show at least 9 numbers
     const observed = trialResults.filter(v => v > 0);
     const minObserved = Math.min(...observed);
     const maxObserved = Math.max(...observed);
 
-    const start = Math.max(1, minObserved - 3); // 3 less than lowest
+    const rangeSize = Math.max(9, maxObserved - minObserved + 1);
+    const start = Math.max(1, minObserved - Math.floor((rangeSize - (maxObserved - minObserved + 1))/2) - 3);
+    const end = start + rangeSize - 1;
+
     labels = [];
-    for(let l = start; l <= maxObserved; l++){
-      if(trialResults.includes(l)) labels.push(l);
+    for(let l = start; l <= end; l++){
+      if(trialResults.includes(l) || (l >= start && l <= end)) labels.push(l);
     }
     maxVal = Math.max(...labels);
   } else {
@@ -576,6 +579,7 @@ function updateHistogram() {
 
   updateHistTable();
 }
+
 
 // --- Button events ---
 document.getElementById('dropStick').onclick=async()=>{
