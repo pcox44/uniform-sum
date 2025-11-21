@@ -353,13 +353,23 @@ function drawStickSegment(x, width, y, index, val, isLast=false) {
   ctx.strokeStyle = 'black';
   ctx.strokeRect(x, y, width, stickHeight);
 
-  // Text size: smaller for very small values
+  // Base font from stick height
+  let baseFont = stickHeight * 0.8;
   let fontSize;
-  if (val <= 0.04) {
-    fontSize = 12; // small for tiny values
+
+  // Tiny stick threshold = 4% of target
+  const tinyThreshold = 0.04 * targetSum;
+
+  if (val <= tinyThreshold) {
+    // For tiny sticks, scale font based on target
+    fontSize = baseFont * (0.5 / targetSum); // smaller as target grows
+    fontSize = Math.max(8, fontSize);        // minimum font
   } else {
-    fontSize = Math.min(34, Math.max(14, stickHeight * 0.6));
+    // Normal font, mild shrink if target > 1
+    fontSize = baseFont * (targetSum > 1 ? 1 / Math.pow(targetSum, 0.25) : 1);
+    fontSize = Math.min(38, fontSize);       // max font
   }
+
   ctx.font = `bold ${fontSize}px Segoe UI`;
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#000';
@@ -373,7 +383,7 @@ function drawStickSegment(x, width, y, index, val, isLast=false) {
   // Adjust last stick label if partially off-screen
   if (isLast) {
     const canvasRight = stickCanvas.width;
-    const visibleWidth = Math.min(width, canvasRight - x); // how much is visible
+    const visibleWidth = Math.min(width, canvasRight - x);
     const fractionVisible = visibleWidth / width;
     textX = x + width * Math.min(fractionVisible, 0.9) / 2;
     ctx.textAlign = 'center';
@@ -382,6 +392,10 @@ function drawStickSegment(x, width, y, index, val, isLast=false) {
   // Draw stick value
   ctx.fillText(val.toFixed(2), textX, cy);
 }
+
+
+
+
 
 async function dropStickAnimated(len,index){
   const baseY = drawBase();
