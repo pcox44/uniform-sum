@@ -444,7 +444,7 @@ function drawStickSegment(x, width, y, index, val, isLast=false) {
   let fontSize;
 
   // Tiny stick threshold = 4% of target
-  const tinyThreshold = 0.04 * targetSum;
+  const tinyThreshold = 0.045 * targetSum;
 
   if (val <= tinyThreshold) {
     // Scale font proportionally to value/threshold
