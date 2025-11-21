@@ -220,34 +220,36 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
 .collapsible-content { display:none; }
 
 @media (max-width: 768px) {
-  /* Hide canvases on mobile */
-  #stickCanvas,
-  #histCanvas,
-  #histTableContainer {
-    display: none !important;
+  button { font-size: 12px; padding: 6px 10px; }
+  label { font-size: 14px; }
+
+  /* Show sticks and histogram with fixed height */
+  #stickCanvas {
+    display: block;
+    width: 100%;
+    height: 120px;  /* fixed height for mobile */
   }
 
-  /* Stack panels vertically */
+  #histCanvas {
+    display: block;
+    width: 100%;
+    height: 200px;  /* fixed height for mobile */
+  }
+
+  body {
+    min-width: 0; /* allow content to fit screen */
+    overflow-x: auto;
+  }
+
   .container {
-    flex-direction: column;
-    gap: 12px;
+    flex-wrap: wrap; /* allow panels to stack vertically */
   }
 
   .left-panel, .right-panel {
-    flex: 1 1 100%;
+    flex: 1 1 100%; /* full width on mobile */
     min-width: 0;
   }
-
-  button { 
-    font-size: 14px; 
-    padding: 8px 12px; 
-    min-width: auto; 
-  }
-
-  label { font-size: 14px; }
 }
-
-
 
 
 
@@ -319,15 +321,15 @@ const colors = ['#ff9800','#00ff00','#ff00ff','#ff1744','#00FFFF','#B57EDC','#ff
 
 function getStickColor(i){ return colors[i%colors.length]; }
 
-function drawBase() {
+function drawBase() { 
   ctx.clearRect(0, 0, stickCanvas.width, stickCanvas.height);
 
   const baseY = stickCanvas.height - 50;
-  const overflowFraction = 0.10;
+  const overflowFraction = 0.10; // extra width beyond target
   const maxSum = targetSum * (1 + overflowFraction);
   const scale = stickCanvas.width / maxSum;
 
-  // Base line
+  // Draw base line
   ctx.strokeStyle = "#aaa";
   ctx.lineWidth = 3;
   ctx.beginPath();
@@ -335,11 +337,13 @@ function drawBase() {
   ctx.lineTo(stickCanvas.width, baseY);
   ctx.stroke();
 
-  // Checkerboard overflow region
+  // Draw checkerboard in overflow region
   const checkerStartX = targetSum * scale;
   const checkerEndX = stickCanvas.width;
+  const checkerHeight = stickCanvas.height;
   const boxSize = 8;
-  for (let y = 0; y < stickCanvas.height; y += boxSize) {
+
+  for (let y = 0; y < checkerHeight; y += boxSize) {
     let toggle = Math.floor(y / boxSize) % 2 === 0;
     for (let x = checkerStartX; x < checkerEndX; x += boxSize) {
       ctx.fillStyle = toggle ? "#fff" : "#000";
@@ -351,12 +355,9 @@ function drawBase() {
   return baseY;
 }
 
+
 function drawStickSegment(x, width, y, index, val, isLast=false) {
-  const isMobile = window.innerWidth <= 768; // detect mobile
-
-  // Stick height: smaller on mobile
-  const stickHeight = isMobile ? stickCanvas.height * 0.35 : stickCanvas.height * 0.5;
-
+  const stickHeight = stickCanvas.height * 0.50;
   const color = getStickColor(index);
 
   // Draw stick
@@ -415,22 +416,22 @@ function drawStickSegment(x, width, y, index, val, isLast=false) {
 }
 
 
+
 // Animated drop
 async function dropStickAnimated(len, index) {
   const baseY = drawBase();
   const scale = stickCanvas.width / (targetSum * 1.1);
   const stickWidth = len * scale;
 
+  // Compute x position once for this stick
   const x = currentSticks.slice(0, index).reduce((a, b) => a + b, 0) * scale;
+
   let y = -60; // start above canvas
-
-  const isMobile = window.innerWidth <= 768;
-  const fallSpeed = isMobile ? 20 : 7; // faster on mobile
-
   return new Promise(resolve => {
     function fall() {
       drawBase();
 
+      // Draw previous sticks at their final positions
       let px = 0;
       for (let i = 0; i < index; i++) {
         const w = currentSticks[i] * scale;
@@ -438,8 +439,9 @@ async function dropStickAnimated(len, index) {
         px += w;
       }
 
+      // Draw falling stick
       if (y < baseY - 28) {
-        y += fallSpeed;   // <-- use fallSpeed
+        y += 7;
         drawStickSegment(x, stickWidth, y, index, len, false);
         requestAnimationFrame(fall);
       } else {
@@ -526,20 +528,6 @@ function updateHistTable() {
 
 // --- Histogram Drawing ---
 function updateHistogram() {
-  const isMobile = window.innerWidth <= 768;
-
-  // If mobile, hide canvases and skip drawing
-  if (isMobile) {
-    if (histCanvas) histCanvas.style.display = 'none';
-    if (stickCanvas) stickCanvas.style.display = 'none';
-    updateHistTable(); // update table if desired
-    return;
-  } else {
-    if (histCanvas) histCanvas.style.display = 'block';
-    if (stickCanvas) stickCanvas.style.display = 'block';
-  }
-
-  // Clear canvas
   histCtx.clearRect(0,0,histCanvas.width,histCanvas.height);
 
   const topPadding = 40;
@@ -550,16 +538,19 @@ function updateHistogram() {
   const plotWidth = histCanvas.width - leftPadding - rightPadding;
   const plotHeight = histCanvas.height - topPadding - bottomPadding;
 
-  if(trialResults.length === 0) {
+  if(trialResults.length===0) {
     updateHistTable();
     return;
   }
 
   let labels, maxVal;
-  if(targetSum > 4) {
+
+  if(targetSum > 4){
+    // Only show results actually observed, but show at least 9 numbers
     const observed = trialResults.filter(v => v > 0);
     const minObserved = Math.min(...observed);
     const maxObserved = Math.max(...observed);
+
     const rangeSize = Math.max(9, maxObserved - minObserved + 1);
     const start = Math.max(1, minObserved - Math.floor((rangeSize - (maxObserved - minObserved + 1))/2) - 3);
     const end = start + rangeSize - 1;
@@ -581,7 +572,7 @@ function updateHistogram() {
 
   const barWidth = plotWidth / labels.length * 0.8;
 
-  // Horizontal grid lines
+  // Draw horizontal grid lines
   histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
   histCtx.lineWidth = 1;
   histCtx.font = '14px Segoe UI';
@@ -591,15 +582,15 @@ function updateHistogram() {
 
   const ySteps = 5;
   for(let i = 0; i <= ySteps; i++) {
-    const prop = (i / ySteps) * maxProp;
-    const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
+      const prop = (i / ySteps) * maxProp;
+      const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
 
-    histCtx.beginPath();
-    histCtx.moveTo(leftPadding, yPos);
-    histCtx.lineTo(histCanvas.width - rightPadding, yPos);
-    histCtx.stroke();
+      histCtx.beginPath();
+      histCtx.moveTo(leftPadding, yPos);
+      histCtx.lineTo(histCanvas.width - rightPadding, yPos);
+      histCtx.stroke();
 
-    histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos);
+      histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos);
   }
 
   // Y-axis label
@@ -615,15 +606,15 @@ function updateHistogram() {
 
   // Draw bars
   labels.forEach((label,i)=>{
+    const count = counts[i];
     const proportion = proportions[i];
-    const h = (proportion / yMax) * plotHeight;
+    const h = proportion / yMax * plotHeight;
     const color = getStickColor(label-1);
     histCtx.fillStyle = color;
     histCtx.fillRect(leftPadding + i*(plotWidth/labels.length)+barWidth*0.1,
                      topPadding + plotHeight - h,
                      barWidth,
                      h);
-
     histCtx.fillStyle = '#fff';
     histCtx.textAlign = 'center';
     histCtx.textBaseline = 'top';
@@ -637,8 +628,6 @@ function updateHistogram() {
 
   updateHistTable();
 }
-
-
 
 
 // --- Button events ---
@@ -665,51 +654,27 @@ function runTrials(n,reset=true){ if(reset) resetTrialState();
 }
 
 // --- Canvas DPI fix ---
-// --- Canvas DPI fix ---
-function fixCanvasDPI(canvas, ctx){
-  const isMobile = window.innerWidth <= 768;
-  const dpr = isMobile ? 1 : (window.devicePixelRatio || 1); // don't over-scale on mobile
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  ctx.setTransform(1,0,0,1,0,0); // reset any previous scale
-  ctx.scale(dpr, dpr);
+function fixCanvasDPI(canvas,ctx){
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*dpr;
+  canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
 }
+fixCanvasDPI(stickCanvas,ctx); fixCanvasDPI(histCanvas,histCtx);
+drawBase(); updateHistogram();
 
-fixCanvasDPI(stickCanvas,ctx); 
-fixCanvasDPI(histCanvas,histCtx);
-drawBase(); 
-updateHistogram();
-
-window.addEventListener('resize',()=>{ 
-  fixCanvasDPI(stickCanvas,ctx); 
-  fixCanvasDPI(histCanvas,histCtx); 
-  drawBase(); 
-  updateHistogram(); 
-});
+window.addEventListener('resize',()=>{ fixCanvasDPI(stickCanvas,ctx); fixCanvasDPI(histCanvas,histCtx); drawBase(); updateHistogram(); });
 
 function resizeCanvases() {
-  const isMobile = window.innerWidth <= 768;
-
-  // Set actual drawable canvas size
-  stickCanvas.width = window.innerWidth - 20;
-  stickCanvas.height = isMobile ? 400 : 300;
-
-  histCanvas.width = window.innerWidth - 20;
-  histCanvas.height = isMobile ? 500 : 400;
-
-  // Adjust for high-DPI screens
-  fixCanvasDPI(stickCanvas, ctx);
-  fixCanvasDPI(histCanvas, histCtx);
-
-  // Redraw everything
-  drawBase();
-  updateHistogram();
+    fixCanvasDPI(stickCanvas, ctx);
+    fixCanvasDPI(histCanvas, histCtx);
+    drawBase();
+    updateHistogram();
 }
 
-// Call on load and resize
 window.addEventListener('resize', resizeCanvases);
-resizeCanvases();
+resizeCanvases(); // call once on load
 
 </script>
 
