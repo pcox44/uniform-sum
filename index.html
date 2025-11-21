@@ -321,17 +321,15 @@ const colors = ['#ff9800','#00ff00','#ff00ff','#ff1744','#00FFFF','#B57EDC','#ff
 
 function getStickColor(i){ return colors[i%colors.length]; }
 
-function drawBase() { 
+function drawBase() {
   ctx.clearRect(0, 0, stickCanvas.width, stickCanvas.height);
 
-  const isMobile = window.innerWidth <= 768;
-  const baseY = stickCanvas.height - (isMobile ? 30 : 50); // lower base for mobile
-
-  const overflowFraction = 0.10; // extra width beyond target
+  const baseY = stickCanvas.height - 50;
+  const overflowFraction = 0.10;
   const maxSum = targetSum * (1 + overflowFraction);
   const scale = stickCanvas.width / maxSum;
 
-  // Draw base line
+  // Base line
   ctx.strokeStyle = "#aaa";
   ctx.lineWidth = 3;
   ctx.beginPath();
@@ -339,13 +337,11 @@ function drawBase() {
   ctx.lineTo(stickCanvas.width, baseY);
   ctx.stroke();
 
-  // Draw checkerboard in overflow region
+  // Checkerboard overflow region
   const checkerStartX = targetSum * scale;
   const checkerEndX = stickCanvas.width;
-  const checkerHeight = stickCanvas.height;
   const boxSize = 8;
-
-  for (let y = 0; y < checkerHeight; y += boxSize) {
+  for (let y = 0; y < stickCanvas.height; y += boxSize) {
     let toggle = Math.floor(y / boxSize) % 2 === 0;
     for (let x = checkerStartX; x < checkerEndX; x += boxSize) {
       ctx.fillStyle = toggle ? "#fff" : "#000";
@@ -356,7 +352,6 @@ function drawBase() {
 
   return baseY;
 }
-
 
 function drawStickSegment(x, width, y, index, val, isLast=false) {
   const isMobile = window.innerWidth <= 768; // detect mobile
@@ -533,55 +528,50 @@ function updateHistTable() {
 
 // --- Histogram Drawing ---
 function updateHistogram() {
-  histCtx.clearRect(0, 0, histCanvas.width, histCanvas.height);
+  histCtx.clearRect(0,0,histCanvas.width,histCanvas.height);
 
   const isMobile = window.innerWidth <= 768;
-
-  // Adjust padding for mobile
   const topPadding = isMobile ? 20 : 40;
-  const bottomPadding = isMobile ? 40 : 60;
+  const bottomPadding = isMobile ? 60 : 60;
   const leftPadding = 70;
   const rightPadding = 20;
 
   const plotWidth = histCanvas.width - leftPadding - rightPadding;
   const plotHeight = histCanvas.height - topPadding - bottomPadding;
 
-  if (trialResults.length === 0) {
+  if(trialResults.length===0) {
     updateHistTable();
     return;
   }
 
   let labels, maxVal;
-
-  if (targetSum > 4) {
+  if(targetSum > 4){
     const observed = trialResults.filter(v => v > 0);
     const minObserved = Math.min(...observed);
     const maxObserved = Math.max(...observed);
     const rangeSize = Math.max(9, maxObserved - minObserved + 1);
-    const start = Math.max(1, minObserved - Math.floor((rangeSize - (maxObserved - minObserved + 1)) / 2) - 3);
+    const start = Math.max(1, minObserved - Math.floor((rangeSize - (maxObserved - minObserved + 1))/2) - 3);
     const end = start + rangeSize - 1;
 
     labels = [];
-    for (let l = start; l <= end; l++) {
-      if (trialResults.includes(l) || (l >= start && l <= end)) labels.push(l);
+    for(let l = start; l <= end; l++){
+      if(trialResults.includes(l) || (l >= start && l <= end)) labels.push(l);
     }
     maxVal = Math.max(...labels);
   } else {
     maxVal = Math.max(...trialResults, 10);
-    labels = Array.from({ length: maxVal }, (_, i) => i + 1);
+    labels = Array.from({length:maxVal},(_,i)=>i+1);
   }
 
   const counts = labels.map(l => trialResults.filter(v => v === l).length);
   const proportions = counts.map(c => c / trialResults.length);
   const maxProp = Math.max(...proportions);
-
-  // Scale vertical for mobile
-  const scaleFactor = isMobile ? 2 : 1;
-  const yMax = maxProp * 1.1 * scaleFactor;
+  const yMax = maxProp * 1.1;
 
   const barWidth = plotWidth / labels.length * 0.8;
+  const scaleFactor = isMobile ? 2 : 1;  // scale down bars on mobile
 
-  // Draw horizontal grid lines
+  // Horizontal grid lines
   histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
   histCtx.lineWidth = 1;
   histCtx.font = '14px Segoe UI';
@@ -590,15 +580,16 @@ function updateHistogram() {
   histCtx.textBaseline = 'middle';
 
   const ySteps = 5;
-  for (let i = 0; i <= ySteps; i++) {
-    const prop = (i / ySteps) * maxProp;
-    const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
-    histCtx.beginPath();
-    histCtx.moveTo(leftPadding, yPos);
-    histCtx.lineTo(histCanvas.width - rightPadding, yPos);
-    histCtx.stroke();
+  for(let i = 0; i <= ySteps; i++) {
+      const prop = (i / ySteps) * maxProp;
+      const yPos = topPadding + plotHeight - (prop / (yMax * scaleFactor) * plotHeight);
 
-    histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos);
+      histCtx.beginPath();
+      histCtx.moveTo(leftPadding, yPos);
+      histCtx.lineTo(histCanvas.width - rightPadding, yPos);
+      histCtx.stroke();
+
+      histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos);
   }
 
   // Y-axis label
@@ -613,12 +604,12 @@ function updateHistogram() {
   histCtx.restore();
 
   // Draw bars
-  labels.forEach((label, i) => {
+  labels.forEach((label,i)=>{
     const proportion = proportions[i];
-    const h = (proportion / yMax) * plotHeight; // compress bars on mobile
-    const color = getStickColor(label - 1);
+    const h = (proportion / (yMax * scaleFactor)) * plotHeight;
+    const color = getStickColor(label-1);
     histCtx.fillStyle = color;
-    histCtx.fillRect(leftPadding + i * (plotWidth / labels.length) + barWidth * 0.1,
+    histCtx.fillRect(leftPadding + i*(plotWidth/labels.length)+barWidth*0.1,
                      topPadding + plotHeight - h,
                      barWidth,
                      h);
@@ -626,18 +617,16 @@ function updateHistogram() {
     histCtx.fillStyle = '#fff';
     histCtx.textAlign = 'center';
     histCtx.textBaseline = 'top';
-    histCtx.fillText(label, leftPadding + i * (plotWidth / labels.length) + barWidth / 2,
-                      topPadding + plotHeight + 5);
+    histCtx.fillText(label, leftPadding + i*(plotWidth/labels.length)+barWidth/2, topPadding + plotHeight + 5);
   });
 
   // X-axis label
   histCtx.textAlign = 'center';
   histCtx.textBaseline = 'top';
-  histCtx.fillText('Sticks Needed', leftPadding + plotWidth / 2, histCanvas.height - bottomPadding + 20);
+  histCtx.fillText('Sticks Needed', leftPadding + plotWidth/2, histCanvas.height - bottomPadding + 20);
 
   updateHistTable();
 }
-
 
 
 
@@ -689,15 +678,26 @@ window.addEventListener('resize',()=>{
 });
 
 function resizeCanvases() {
-    fixCanvasDPI(stickCanvas, ctx);
-    fixCanvasDPI(histCanvas, histCtx);
-    drawBase();
-    updateHistogram();
+  const isMobile = window.innerWidth <= 768;
+
+  // Set canvas widths and heights
+  stickCanvas.width = window.innerWidth - 20;  // small margin
+  stickCanvas.height = isMobile ? 400 : 300;
+
+  histCanvas.width = window.innerWidth - 20;
+  histCanvas.height = isMobile ? 500 : 400;
+
+  // Adjust for high-DPI screens
+  fixCanvasDPI(stickCanvas, ctx);
+  fixCanvasDPI(histCanvas, histCtx);
+
+  // Redraw
+  drawBase();
+  updateHistogram();
 }
 
 window.addEventListener('resize', resizeCanvases);
-resizeCanvases(); // call once on load
-
+resizeCanvases();  // initial draw
 
 </script>
 
