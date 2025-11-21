@@ -654,6 +654,7 @@ function runTrials(n,reset=true){ if(reset) resetTrialState();
 }
 
 // --- Canvas DPI fix ---
+// --- Canvas DPI fix ---
 function fixCanvasDPI(canvas,ctx){
   const dpr=window.devicePixelRatio||1;
   const rect=canvas.getBoundingClientRect();
@@ -661,10 +662,17 @@ function fixCanvasDPI(canvas,ctx){
   canvas.height=rect.height*dpr;
   ctx.scale(dpr,dpr);
 }
-fixCanvasDPI(stickCanvas,ctx); fixCanvasDPI(histCanvas,histCtx);
-drawBase(); updateHistogram();
+fixCanvasDPI(stickCanvas,ctx); 
+fixCanvasDPI(histCanvas,histCtx);
+drawBase(); 
+updateHistogram();
 
-window.addEventListener('resize',()=>{ fixCanvasDPI(stickCanvas,ctx); fixCanvasDPI(histCanvas,histCtx); drawBase(); updateHistogram(); });
+window.addEventListener('resize',()=>{ 
+  fixCanvasDPI(stickCanvas,ctx); 
+  fixCanvasDPI(histCanvas,histCtx); 
+  drawBase(); 
+  updateHistogram(); 
+});
 
 function resizeCanvases() {
     fixCanvasDPI(stickCanvas, ctx);
@@ -675,6 +683,7 @@ function resizeCanvases() {
 
 window.addEventListener('resize', resizeCanvases);
 resizeCanvases(); // call once on load
+
 
 </script>
 
