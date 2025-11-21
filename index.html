@@ -220,16 +220,17 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
 .collapsible-content { display:none; }
 
 @media (max-width: 768px) {
-  button { 
-    font-size: 12px; 
-    padding: 6px 10px; 
-    min-width: auto; 
+  /* Hide canvases on mobile */
+  #stickCanvas,
+  #histCanvas,
+  #histTableContainer {
+    display: none !important;
   }
 
-  label { font-size: 14px; }
-
-  .container { 
-    flex-wrap: wrap; 
+  /* Stack panels vertically */
+  .container {
+    flex-direction: column;
+    gap: 12px;
   }
 
   .left-panel, .right-panel {
@@ -237,16 +238,13 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
     min-width: 0;
   }
 
-  /* Remove fixed height on canvas */
-  #stickCanvas, #histCanvas {
-    width: 100%;
-    height: auto; /* Let JS set actual height */
+  button { 
+    font-size: 14px; 
+    padding: 8px 12px; 
+    min-width: auto; 
   }
 
-  body {
-    min-width: 0;
-    overflow-x: auto;
-  }
+  label { font-size: 14px; }
 }
 
 
