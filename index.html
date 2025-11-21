@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,6 +22,15 @@
   box-shadow: inset 0 0 6px rgba(0,255,255,0.2);
 }
 
+/* Remove up/down arrow */
+#targetSumInput::-webkit-inner-spin-button,
+#targetSumInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+#targetSumInput {
+  -moz-appearance: textfield;
+}
 
 #topDesc {
   padding: 10px 16px;
@@ -115,12 +125,12 @@ h1 {
 }
 
 .left-panel {
-  flex: 0 0 75%; /* 60% width */
+  flex: 0 0 67%; /* 60% width */
   min-width: 300px;
 }
 
 .right-panel {
-  flex: 0 0 25%; /* 40% width */
+  flex: 0 0 33%; /* 40% width */
   min-width: 300px;
 }
 
@@ -251,6 +261,14 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
   }
 }
 
+.card {
+  background: rgba(40,40,70,0.9);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  margin-bottom: 12px;
+}
+
 
 
 </style>
@@ -260,9 +278,13 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
 
 <h1>Uniform Sum Simulation</h1>
 
-<div id="topDesc">
-  <strong>Process:</strong> Select uniform random numbers [0–1]. Lay sticks end-to-end until they exceed the target. Count how many sticks were needed.
+<div id="topDesc" style="font-size: 18px; line-height: 1.6;">
+  <strong>Process:</strong> 
+  Generate independent random numbers from a uniform distribution on [0,1]. 
+  Lay the “sticks” end-to-end, summing them, until the total exceeds the target. 
+  Count how many sticks are needed.
 </div>
+
 
 <canvas id="stickCanvas"></canvas>
 
@@ -288,11 +310,60 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
   </div>
 </div>
 
-<button class="collapsible">Explanation</button>
-<div class="collapsible-content">
-  <p>Pick independent random numbers X₁, X₂, … from 0 to 1. Let N be the smallest number so that X₁ + … + X<sub>N</sub> exceeds the target. For target=1, P(N=n)=1/n!. So expected numbers needed ≈ e.</p>
-  <p><strong>Simplex Explanation:</strong> The n-dimensional simplex X₁+…+X<sub>n</sub>≤1 with Xᵢ≥0 has volume 1/n!, matching probability that nth stick exceeds the target.</p>
+<button class="collapsible">
+  \(\text{Explanation for Target = 1}\)
+</button>
+
+<div class="collapsible-content" style="font-size: 18px; line-height: 1.6; padding: 4px 2px;">
+
+  <p>
+    We generate independent uniform random variables  
+    \(X_1, X_2, X_3, \ldots \sim \mathrm{Uniform}(0,1)\).
+    Let
+    \[
+      S_n = X_1 + X_2 + \cdots + X_n,
+    \]
+    and define the stopping time
+    \[
+      N = \min \{ n : S_n > 1 \}.
+    \]
+  </p>
+
+  <p>
+    A classical result states:
+    \[
+      \mathbb{P}(N = n) = \frac{1}{n!}.
+    \]
+    Therefore the expected number of sticks needed is
+    \[
+      \mathbb{E}[N]
+      = \sum_{n=1}^{\infty} n \cdot \frac{1}{n!}=\sum_{n=0}^{\infty} \frac{1}{n!}
+      = e.
+    \]
+    This is why simulations cluster around \(e \approx 2.71828\).
+  </p>
+
+  <!-- Divider -->
+  <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+
+  <p><strong>Geometric / Simplex Explanation</strong></p>
+
+  <p>
+    The condition \(S_n \le 1\) describes an \(n\)-dimensional simplex:
+    \[
+      \{(x_1,\ldots,x_n) : x_i \ge 0,\; x_1 + \cdots + x_n \le 1 \}.
+    \]
+    The volume of this simplex is
+    \[
+      \mathrm{V} = \frac{1}{n!}
+    \]
+    This volume equals the probability that the first \(n\) sticks
+    do <em>not</em> exceed the target, meaning the \((n+1)\)-th stick
+    is the one that finally pushes the total past 1.
+  </p>
+
 </div>
+
 
 <script>
 // Collapsible
@@ -457,28 +528,102 @@ async function dropStickAnimated(len, index) {
 function resetTrialState(){ currentSticks=[]; currentSum=0; drawBase(); dropOneActive=false; }
 function endTrial(){ trialResults.push(currentSticks.length); lastStickIndices.push(currentSticks.length-1); dropOneActive=false; updateHistogram(); updateStats(); updateLastTrialBox(); }
 
-function updateLastTrialBox(){
-  if(currentSticks.length===0){ lastTrialBox.innerHTML='No trial yet.'; return; }
-  let sum=0; let content='';
-  currentSticks.forEach((v,i)=>{
-    sum+=v; const isLast=sum>targetSum;
-    const color=getStickColor(i);
-    content+=`<span class="stickSpan" style="color:${color};${isLast?`border:2px solid ${color};`:''}">${v.toFixed(3)}</span> `;
-  });
-  lastTrialBox.innerHTML=`<strong>Last trial:</strong><br>${content}<br>
-    <strong>Sum:</strong> ${sum.toFixed(3)} > ${targetSum}
-    <span style="margin-left:20px;"><strong>Sticks used:</strong> ${currentSticks.length}</span>`;
+function fmt(x) {
+  return parseFloat(x.toFixed(4)).toString();
 }
 
-function updateStats(){
-  if(trialResults.length===0){ statsDiv.innerHTML=''; return; }
-  const n = trialResults.length;
-  const avg = trialResults.reduce((a,b)=>a+b,0)/n;
-  let html=`<strong>Trials:</strong> ${n}<br><strong>Average sticks:</strong> ${avg.toFixed(4)}<br>`;
-  if(targetSum===1){ html+=`<strong>Theoretical:</strong> e ≈ ${Math.E.toFixed(4)}<br><strong>|Sim - Theo|:</strong> ${(Math.abs(avg-Math.E)).toFixed(4)}`; }
-  else if(targetSum===2){ html+=`<strong>Theoretical:</strong> e²-e ≈ ${(Math.E**2-Math.E).toFixed(4)}<br><strong>|Sim - Theo|:</strong> ${(Math.abs(avg-(Math.E**2-Math.E))).toFixed(4)}`; }
-  statsDiv.innerHTML=html;
+// Update the "Last Trial" box
+// Update the "Last Trial" box with 3 decimals for stick values
+function updateLastTrialBox() {
+  if (currentSticks.length === 0) {
+    lastTrialBox.innerHTML = `
+  <div class="card">
+    <strong>Last trial:</strong>
+    <div style="margin:6px 0;">${content}</div>
+    <div><strong>Sum:</strong> ${sum.toFixed(3)} > ${targetSum.toFixed(3)}</div>
+    <div><strong>Sticks used:</strong> ${currentSticks.length}</div>
+  </div>
+`;
+
+    return;
+  }
+
+  let sum = 0;
+  let content = '';
+  currentSticks.forEach((v, i) => {
+    sum += v;
+    const isLast = sum > targetSum;
+    const color = getStickColor(i);
+    content += `<span class="stickSpan" style="
+      color:${color};
+      ${isLast ? `border:2px solid ${color}; border-radius:4px; background: rgba(255,255,255,0.1); padding:2px 4px;` : ''}">
+      ${v.toFixed(3)}
+    </span> `;
+  });
+
+  lastTrialBox.innerHTML = `
+    <div style="padding:12px; border-radius:10px; background: rgba(255,255,255,0.05);">
+      <strong>Last trial:</strong>
+      <div style="margin:6px 0;">${content}</div>
+      <div><strong>Sum:</strong> ${sum.toFixed(3)} > ${targetSum.toFixed(3)}</div>
+      <div><strong>Sticks used:</strong> ${currentSticks.length}</div>
+    </div>
+  `;
 }
+
+// Update the "Stats" box
+function updateStats() {
+  if (trialResults.length === 0) {
+    statsDiv.innerHTML = `
+  <div class="card">
+    <strong>Trials:</strong> ${n}<br>
+    <strong>Average sticks:</strong> ${fmt(avg)}<br>
+    ${theoretical}
+  </div>
+`;
+
+    return;
+  }
+
+  const n = trialResults.length;
+  const avg = trialResults.reduce((a, b) => a + b, 0) / n;
+
+  // CSS style for math spans
+  const mathStyle = 'font-size:0.9em; display:inline-block;';        // default
+  const mathStyleSmall = 'font-size:0.8em; display:inline-block;';  // smaller for target 4
+
+  let theoretical = '';
+
+  if (targetSum === 1) {
+    theoretical = `<strong>Theoretical:</strong> <span style="${mathStyle}">\\(e\\)</span> ≈ ${fmt(Math.E)}<br>
+                   <strong>|Sim - Theo|:</strong> ${fmt(Math.abs(avg - Math.E))}`;
+  } else if (targetSum === 2) {
+    const val = Math.E ** 2 - Math.E;
+    theoretical = `<strong>Theoretical:</strong> <span style="${mathStyle}">\\(e^2 - e\\)</span> ≈ ${fmt(val)}<br>
+                   <strong>|Sim - Theo|:</strong> ${fmt(Math.abs(avg - val))}`;
+  } else if (targetSum === 3) {
+    const val = 0.5 * (2 * Math.E ** 3 - 4 * Math.E ** 2 + Math.E);
+    theoretical = `<strong>Theoretical:</strong> <span style="${mathStyle}">\\(\\frac{1}{2}(2e^3 - 4e^2 + e)\\)</span> ≈ ${fmt(val)}<br>
+                   <strong>|Sim - Theo|:</strong> ${fmt(Math.abs(avg - val))}`;
+  } else if (targetSum === 4) {
+    const val = (1/6) * (6 * Math.E ** 4 - 18 * Math.E ** 3 + 12 * Math.E ** 2 - Math.E);
+    theoretical = `<strong>Theoretical:</strong> <span style="${mathStyleSmall}">\\(\\frac{1}{6}(6e^4 - 18e^3 + 12e^2 - e)\\)</span> ≈ ${fmt(val)}<br>
+                   <strong>|Sim - Theo|:</strong> ${fmt(Math.abs(avg - val))}`;
+  }
+
+  statsDiv.innerHTML = `
+    <div style="padding:12px; border-radius:10px; background: rgba(255,255,255,0.05);">
+      <strong>Trials:</strong> ${n}<br>
+      <strong>Average sticks:</strong> ${fmt(avg)}<br>
+      ${theoretical}
+    </div>
+  `;
+
+  // Render MathJax if loaded
+  if (window.MathJax) MathJax.typesetPromise();
+}
+
+
 
 // --- Histogram Table ---
 function updateHistTable() {
@@ -517,8 +662,8 @@ function updateHistTable() {
       <tr>
         <td style="border:1px solid #fff; padding:6px;">${l}</td>
         <td style="border:1px solid #fff; padding:6px;">${count}</td>
-        <td style="border:1px solid #fff; padding:6px;">${rel.toFixed(4)}</td>
-        <td style="border:1px solid #fff; padding:6px;">${runningSum.toFixed(4)}</td>
+        <td style="border:1px solid #fff; padding:6px;">${fmt(rel)}</td>
+        <td style="border:1px solid #fff; padding:6px;">${fmt(runningSum)}</td>
       </tr>`;
   });
 
