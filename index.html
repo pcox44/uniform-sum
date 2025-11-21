@@ -220,35 +220,27 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
 .collapsible-content { display:none; }
 
 @media (max-width: 768px) {
-  /* Buttons smaller and fit screen */
   button { 
     font-size: 12px; 
     padding: 6px 10px; 
-    min-width: auto; /* allow them to shrink */
+    min-width: auto; 
   }
 
-  /* Labels slightly smaller */
   label { font-size: 14px; }
 
-  /* Stack panels vertically */
   .container { 
     flex-wrap: wrap; 
   }
 
   .left-panel, .right-panel {
-    flex: 1 1 100%;  /* full width */
+    flex: 1 1 100%;
     min-width: 0;
   }
 
-  /* Canvases taller for mobile, fill panel width */
-  #stickCanvas {
-    width: 100% !important;
-    height: 400px !important;  /* taller for mobile */
-  }
-
-  #histCanvas {
-    width: 100% !important;
-    height: 500px !important;  /* taller for mobile */
+  /* Remove fixed height on canvas */
+  #stickCanvas, #histCanvas {
+    width: 100%;
+    height: auto; /* Let JS set actual height */
   }
 
   body {
@@ -688,8 +680,8 @@ window.addEventListener('resize',()=>{
 function resizeCanvases() {
   const isMobile = window.innerWidth <= 768;
 
-  // Set canvas widths and heights
-  stickCanvas.width = window.innerWidth - 20;  // small margin
+  // Set actual drawable canvas size
+  stickCanvas.width = window.innerWidth - 20;
   stickCanvas.height = isMobile ? 400 : 300;
 
   histCanvas.width = window.innerWidth - 20;
@@ -699,13 +691,14 @@ function resizeCanvases() {
   fixCanvasDPI(stickCanvas, ctx);
   fixCanvasDPI(histCanvas, histCtx);
 
-  // Redraw
+  // Redraw everything
   drawBase();
   updateHistogram();
 }
 
+// Call on load and resize
 window.addEventListener('resize', resizeCanvases);
-resizeCanvases();  // initial draw
+resizeCanvases();
 
 </script>
 
