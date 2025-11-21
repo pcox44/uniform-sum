@@ -355,10 +355,10 @@ function drawStickSegment(x, width, y, index, val, isLast=false) {
 
   // Text size: smaller for very small values
   let fontSize;
-  if (val <= 0.03) {
+  if (val <= 0.04) {
     fontSize = 12; // small for tiny values
   } else {
-    fontSize = Math.min(24, Math.max(14, stickHeight * 0.6));
+    fontSize = Math.min(34, Math.max(14, stickHeight * 0.6));
   }
   ctx.font = `bold ${fontSize}px Segoe UI`;
   ctx.textBaseline = 'middle';
