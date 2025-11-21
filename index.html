@@ -526,24 +526,37 @@ function updateHistTable() {
 
 // --- Histogram Drawing ---
 function updateHistogram() {
+  const isMobile = window.innerWidth <= 768;
+
+  // If mobile, hide canvases and skip drawing
+  if (isMobile) {
+    if (histCanvas) histCanvas.style.display = 'none';
+    if (stickCanvas) stickCanvas.style.display = 'none';
+    updateHistTable(); // update table if desired
+    return;
+  } else {
+    if (histCanvas) histCanvas.style.display = 'block';
+    if (stickCanvas) stickCanvas.style.display = 'block';
+  }
+
+  // Clear canvas
   histCtx.clearRect(0,0,histCanvas.width,histCanvas.height);
 
-  const isMobile = window.innerWidth <= 768;
-  const topPadding = isMobile ? 20 : 40;
-  const bottomPadding = isMobile ? 60 : 60;
+  const topPadding = 40;
+  const bottomPadding = 60;
   const leftPadding = 70;
   const rightPadding = 20;
 
   const plotWidth = histCanvas.width - leftPadding - rightPadding;
   const plotHeight = histCanvas.height - topPadding - bottomPadding;
 
-  if(trialResults.length===0) {
+  if(trialResults.length === 0) {
     updateHistTable();
     return;
   }
 
   let labels, maxVal;
-  if(targetSum > 4){
+  if(targetSum > 4) {
     const observed = trialResults.filter(v => v > 0);
     const minObserved = Math.min(...observed);
     const maxObserved = Math.max(...observed);
@@ -567,7 +580,6 @@ function updateHistogram() {
   const yMax = maxProp * 1.1;
 
   const barWidth = plotWidth / labels.length * 0.8;
-  const scaleFactor = isMobile ? 2 : 1;  // scale down bars on mobile
 
   // Horizontal grid lines
   histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
@@ -579,15 +591,15 @@ function updateHistogram() {
 
   const ySteps = 5;
   for(let i = 0; i <= ySteps; i++) {
-      const prop = (i / ySteps) * maxProp;
-      const yPos = topPadding + plotHeight - (prop / (yMax * scaleFactor) * plotHeight);
+    const prop = (i / ySteps) * maxProp;
+    const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
 
-      histCtx.beginPath();
-      histCtx.moveTo(leftPadding, yPos);
-      histCtx.lineTo(histCanvas.width - rightPadding, yPos);
-      histCtx.stroke();
+    histCtx.beginPath();
+    histCtx.moveTo(leftPadding, yPos);
+    histCtx.lineTo(histCanvas.width - rightPadding, yPos);
+    histCtx.stroke();
 
-      histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos);
+    histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos);
   }
 
   // Y-axis label
@@ -604,7 +616,7 @@ function updateHistogram() {
   // Draw bars
   labels.forEach((label,i)=>{
     const proportion = proportions[i];
-    const h = (proportion / (yMax * scaleFactor)) * plotHeight;
+    const h = (proportion / yMax) * plotHeight;
     const color = getStickColor(label-1);
     histCtx.fillStyle = color;
     histCtx.fillRect(leftPadding + i*(plotWidth/labels.length)+barWidth*0.1,
@@ -625,6 +637,7 @@ function updateHistogram() {
 
   updateHistTable();
 }
+
 
 
 
