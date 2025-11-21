@@ -324,7 +324,9 @@ function getStickColor(i){ return colors[i%colors.length]; }
 function drawBase() { 
   ctx.clearRect(0, 0, stickCanvas.width, stickCanvas.height);
 
-  const baseY = stickCanvas.height - 50;
+  const isMobile = window.innerWidth <= 768;
+  const baseY = stickCanvas.height - (isMobile ? 30 : 50); // lower base for mobile
+
   const overflowFraction = 0.10; // extra width beyond target
   const maxSum = targetSum * (1 + overflowFraction);
   const scale = stickCanvas.width / maxSum;
@@ -354,6 +356,7 @@ function drawBase() {
 
   return baseY;
 }
+
 
 
 function drawStickSegment(x, width, y, index, val, isLast=false) {
@@ -530,8 +533,9 @@ function updateHistTable() {
 function updateHistogram() {
   histCtx.clearRect(0,0,histCanvas.width,histCanvas.height);
 
-  const topPadding = 40;
-  const bottomPadding = 60;
+  const isMobile = window.innerWidth <= 768;   // detect mobile
+  const topPadding = isMobile ? 20 : 40;
+  const bottomPadding = isMobile ? 40 : 60;
   const leftPadding = 70;
   const rightPadding = 20;
 
@@ -546,11 +550,9 @@ function updateHistogram() {
   let labels, maxVal;
 
   if(targetSum > 4){
-    // Only show results actually observed, but show at least 9 numbers
     const observed = trialResults.filter(v => v > 0);
     const minObserved = Math.min(...observed);
     const maxObserved = Math.max(...observed);
-
     const rangeSize = Math.max(9, maxObserved - minObserved + 1);
     const start = Math.max(1, minObserved - Math.floor((rangeSize - (maxObserved - minObserved + 1))/2) - 3);
     const end = start + rangeSize - 1;
@@ -572,6 +574,8 @@ function updateHistogram() {
 
   const barWidth = plotWidth / labels.length * 0.8;
 
+  const scaleFactor = isMobile ? 2 : 1;   // compress vertical on mobile
+
   // Draw horizontal grid lines
   histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
   histCtx.lineWidth = 1;
@@ -583,7 +587,7 @@ function updateHistogram() {
   const ySteps = 5;
   for(let i = 0; i <= ySteps; i++) {
       const prop = (i / ySteps) * maxProp;
-      const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
+      const yPos = topPadding + plotHeight - (prop / (yMax * scaleFactor) * plotHeight);
 
       histCtx.beginPath();
       histCtx.moveTo(leftPadding, yPos);
@@ -606,15 +610,15 @@ function updateHistogram() {
 
   // Draw bars
   labels.forEach((label,i)=>{
-    const count = counts[i];
     const proportion = proportions[i];
-    const h = proportion / yMax * plotHeight;
+    const h = (proportion / (yMax * scaleFactor)) * plotHeight;  // compress bars if mobile
     const color = getStickColor(label-1);
     histCtx.fillStyle = color;
     histCtx.fillRect(leftPadding + i*(plotWidth/labels.length)+barWidth*0.1,
                      topPadding + plotHeight - h,
                      barWidth,
                      h);
+
     histCtx.fillStyle = '#fff';
     histCtx.textAlign = 'center';
     histCtx.textBaseline = 'top';
@@ -628,6 +632,7 @@ function updateHistogram() {
 
   updateHistTable();
 }
+
 
 
 // --- Button events ---
