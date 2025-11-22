@@ -149,20 +149,9 @@ body {
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
-  button { font-size: 12px; padding: 6px 10px; }
-  label { font-size: 14px; }
-
-  /* Let canvases shrink normally */
-  #stickCanvas, #histCanvas {
-    width: 100%;
-    height: auto;
-    min-height: 180px;  /* slightly larger for readability */
-  }
-
-  .container { flex-wrap: wrap; }
-  .left-panel, .right-panel { flex: 1 1 100%; min-width: 0; }
+  #stickCanvas { height: 180px; }
+  #histCanvas  { height: 250px; }
 }
-
 
 #controls {
   display: flex;
@@ -403,6 +392,7 @@ function fixCanvasDPI(canvas, ctx){
   const rect = canvas.getBoundingClientRect();
   canvas.width = rect.width * dpr;
   canvas.height = rect.height * dpr;
+  ctx.setTransform(1,0,0,1,0,0); // reset previous scaling
   ctx.scale(dpr, dpr);
 }
 
@@ -820,26 +810,15 @@ drawBase(); updateHistogram();
 
 window.addEventListener('resize',()=>{ fixCanvasDPI(stickCanvas,ctx); fixCanvasDPI(histCanvas,histCtx); drawBase(); updateHistogram(); });
 
-function resizeCanvases() {
-  // Stick canvas
-  const stick = document.getElementById("stickCanvas");
-  stick.width  = stick.clientWidth;
-  stick.height = stick.clientHeight;
-
-  // Histogram canvas
-  const hist = document.getElementById("histCanvas");
-  hist.width  = hist.clientWidth;
-  hist.height = hist.clientHeight;
-
-  // Redraw after resizing
-  drawSticks();
-  updateHistogram();
+function handleResize() {
+  fixCanvasDPI(stickCanvas, ctx);
+  fixCanvasDPI(histCanvas, histCtx);
+  drawBase();          // redraw the sticks baseline
+  updateHistogram();   // redraw histogram
 }
 
-// Call on load + on resize
-window.addEventListener("load", resizeCanvases);
-window.addEventListener("resize", resizeCanvases);
-
+window.addEventListener('load', handleResize);
+window.addEventListener('resize', handleResize);
 
 </script>
 
