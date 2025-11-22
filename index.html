@@ -678,108 +678,73 @@ function updateHistTable() {
 
 // --- Histogram Drawing ---
 function updateHistogram() {
-  // Fill background first
-  histCtx.fillStyle = 'rgba(30,30,50,0.9)';  // same as old background
-  histCtx.fillRect(0, 0, histCanvas.width, histCanvas.height);
+    const { w: cW, h: cH } = cssSize(histCanvas); // CSS pixels
+    const topPadding = 40;
+    const bottomPadding = 60;
+    const leftPadding = 70;
+    const rightPadding = 20;
 
-  // --- rest of your histogram drawing code ---
-  const topPadding = 40;
-  const bottomPadding = 60;
-  const leftPadding = 70;
-  const rightPadding = 20;
+    const plotWidth = cW - leftPadding - rightPadding;
+    const plotHeight = cH - topPadding - bottomPadding;
 
-  const plotWidth = histCanvas.width - leftPadding - rightPadding;
-  const plotHeight = histCanvas.height - topPadding - bottomPadding;
+    // clear background using CSS pixels
+    histCtx.fillStyle = 'rgba(30,30,50,0.9)';
+    histCtx.fillRect(0, 0, cW, cH);
 
-  if(trialResults.length===0){
-    updateHistTable();
-    return;
-  }
-  let labels, maxVal;
-
-  if(targetSum > 4){
-    // Only show results actually observed, but show at least 9 numbers
-    const observed = trialResults.filter(v => v > 0);
-    const minObserved = Math.min(...observed);
-    const maxObserved = Math.max(...observed);
-
-    const rangeSize = Math.max(9, maxObserved - minObserved + 1);
-    const start = Math.max(1, minObserved - Math.floor((rangeSize - (maxObserved - minObserved + 1))/2) - 3);
-    const end = start + rangeSize - 1;
-
-    labels = [];
-    for(let l = start; l <= end; l++){
-      if(trialResults.includes(l) || (l >= start && l <= end)) labels.push(l);
+    if(trialResults.length===0){
+        updateHistTable();
+        return;
     }
-    maxVal = Math.max(...labels);
-  } else {
-    maxVal = Math.max(...trialResults, 10);
-    labels = Array.from({length:maxVal},(_,i)=>i+1);
-  }
 
-  const counts = labels.map(l => trialResults.filter(v => v === l).length);
-  const proportions = counts.map(c => c / trialResults.length);
-  const maxProp = Math.max(...proportions);
-  const yMax = maxProp * 1.1;
+    const maxVal = Math.max(...trialResults, 10);
+    const labels = Array.from({length:maxVal},(_,i)=>i+1);
+    const counts = labels.map(l => trialResults.filter(v => v === l).length);
+    const proportions = counts.map(c => c / trialResults.length);
+    const maxProp = Math.max(...proportions);
+    const yMax = maxProp * 1.1;
+    const barWidth = plotWidth / labels.length * 0.8;
 
-  const barWidth = plotWidth / labels.length * 0.8;
-
-  // Draw horizontal grid lines
-  histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
-  histCtx.lineWidth = 1;
-  histCtx.font = '14px Segoe UI';
-  histCtx.fillStyle = '#fff';
-  histCtx.textAlign = 'right';
-  histCtx.textBaseline = 'middle';
-
-  const ySteps = 5;
-  for(let i = 0; i <= ySteps; i++) {
-      const prop = (i / ySteps) * maxProp;
-      const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
-
-      histCtx.beginPath();
-      histCtx.moveTo(leftPadding, yPos);
-      histCtx.lineTo(histCanvas.width - rightPadding, yPos);
-      histCtx.stroke();
-
-      histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos);
-  }
-
-  // Y-axis label
-  histCtx.save();
-  histCtx.translate(20, histCanvas.height / 2);
-  histCtx.rotate(-Math.PI / 2);
-  histCtx.textAlign = 'center';
-  histCtx.textBaseline = 'middle';
-  histCtx.fillStyle = '#fff';
-  histCtx.font = '16px Segoe UI';
-  histCtx.fillText('Proportion', 0, 0);
-  histCtx.restore();
-
-  // Draw bars
-  labels.forEach((label,i)=>{
-    const count = counts[i];
-    const proportion = proportions[i];
-    const h = proportion / yMax * plotHeight;
-    const color = getStickColor(label-1);
-    histCtx.fillStyle = color;
-    histCtx.fillRect(leftPadding + i*(plotWidth/labels.length)+barWidth*0.1,
-                     topPadding + plotHeight - h,
-                     barWidth,
-                     h);
+    // draw horizontal grid lines
+    histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+    histCtx.lineWidth = 1;
+    histCtx.font = '14px Segoe UI';
     histCtx.fillStyle = '#fff';
+    histCtx.textAlign = 'right';
+    histCtx.textBaseline = 'middle';
+    const ySteps = 5;
+    for(let i=0;i<=ySteps;i++){
+        const prop = (i/ySteps)*maxProp;
+        const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
+        histCtx.beginPath();
+        histCtx.moveTo(leftPadding, yPos);
+        histCtx.lineTo(cW - rightPadding, yPos);
+        histCtx.stroke();
+        histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos);
+    }
+
+    // draw bars
+    labels.forEach((label,i)=>{
+        const h = proportions[i]/yMax*plotHeight;
+        const color = getStickColor(label-1);
+        histCtx.fillStyle = color;
+        histCtx.fillRect(leftPadding + i*(plotWidth/labels.length) + barWidth*0.1,
+                         topPadding + plotHeight - h,
+                         barWidth,
+                         h);
+        histCtx.fillStyle = '#fff';
+        histCtx.textAlign = 'center';
+        histCtx.textBaseline = 'top';
+        histCtx.fillText(label, leftPadding + i*(plotWidth/labels.length)+barWidth/2, topPadding + plotHeight + 5);
+    });
+
+    // x-axis label
     histCtx.textAlign = 'center';
     histCtx.textBaseline = 'top';
-    histCtx.fillText(label, leftPadding + i*(plotWidth/labels.length)+barWidth/2, topPadding + plotHeight + 5);
-  });
+    histCtx.fillText('Sticks Needed', leftPadding + plotWidth/2, cH - bottomPadding + 20);
 
-  // X-axis label
-  histCtx.textAlign = 'center';
-  histCtx.textBaseline = 'top';
-  histCtx.fillText('Sticks Needed', leftPadding + plotWidth/2, histCanvas.height - bottomPadding + 20);
-
-  updateHistTable();
+    updateHistTable();
 }
+
 
 
 // --- Button events ---
