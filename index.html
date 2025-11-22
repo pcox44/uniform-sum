@@ -89,68 +89,65 @@ body {
   padding: 20px;
 }
 
-/* Force a wide content area to preserve 2-column layout and canvases */
+/* remove the forced wide minimum (was causing layout troubles on phones) */
 body {
-  overflow-x: auto;   /* horizontal scroll if needed */
-  overflow-y: auto;
-  min-width: 1000px;  /* adjust as needed to fit your canvases & columns */
+  font-family: 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top left, #1a237e 0%, #311b92 100%);
+  color: #eee;
+  padding: 20px;
+  overflow-x: hidden;   /* avoid horizontal scroll on mobile */
 }
 
-/* Ensure container preserves layout */
-.container {
-  min-width: 1000px;  /* match or slightly less than body min-width */
-}
-
-/* Canvases scale within desktop but maintain minimum width */
-#stickCanvas, #histCanvas {
-  min-width: 800px;   /* ensures the canvas doesn’t shrink too small */
-  max-width: 100%;
-}
-
-
-h1 { 
-  text-align: center;
-  font-size: clamp(28px,5vw,48px);
-  color: #fff;
-  text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
-  margin-bottom: 20px;
-}
-
+/* container becomes fully fluid */
 .container {
   display: flex;
-  flex-wrap: nowrap; /* stay side by side */
+  flex-wrap: nowrap;
   gap: 20px;
   max-width: 1600px;
   margin: 0 auto;
-}
-
-.left-panel {
-  flex: 0 0 67%; /* 60% width */
-  min-width: 300px;
-}
-
-.right-panel {
-  flex: 0 0 33%; /* 40% width */
-  min-width: 300px;
-}
-
-/* Make canvases scale with container */
-#stickCanvas, #histCanvas {
-  width: 100%;       /* fill container width */
-  height: auto;      /* let JS adjust height */
-}
-
-
-
-canvas {
   width: 100%;
-  display: block;
-  border-radius: 10px;
-  margin-bottom: 12px;
 }
 
-#stickCanvas { height: 120px; background: rgba(20,20,40,0.9); box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
-#histCanvas { height: 300px; background: rgba(30,30,50,0.9); }
+/* responsive panels */
+.left-panel { flex: 0 0 67%; min-width: 260px; }
+.right-panel { flex: 0 0 33%; min-width: 220px; }
+
+#stickCanvas {
+  width: 100%;
+  height: 120px;      /* old desktop height */
+  background: rgba(20,20,40,0.9);
+}
+
+#histCanvas {
+  width: 100%;
+  height: 300px;      /* old histogram height */
+}
+
+@media (max-width: 768px) {
+  #stickCanvas {
+    height: 200px;    /* taller on mobile to see sticks better */
+  }
+  #histCanvas {
+    height: 200px;    /* smaller on mobile */
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  button { font-size: 12px; padding: 6px 10px; }
+  label { font-size: 14px; }
+
+  /* Let canvases shrink normally */
+  #stickCanvas, #histCanvas {
+    width: 100%;
+    height: auto;
+    min-height: 180px;  /* slightly larger for readability */
+  }
+
+  .container { flex-wrap: wrap; }
+  .left-panel, .right-panel { flex: 1 1 100%; min-width: 0; }
+}
+
 
 #controls {
   display: flex;
@@ -386,26 +383,45 @@ const colors = ['#ff9800','#00ff00','#ff00ff','#ff1744','#00FFFF','#B57EDC','#ff
 
 function getStickColor(i){ return colors[i%colors.length]; }
 
-function drawBase() { 
+function fixCanvasDPI(canvas, ctx) {
+  const dpr = window.devicePixelRatio || 1;
+  // get CSS size
+  const rect = canvas.getBoundingClientRect();
+  // set backing store size in device pixels
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  // reset transform and scale so drawing uses CSS pixels
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+}
+
+function cssSize(canvas) {
+  // use clientWidth/clientHeight which represent CSS pixels
+  return { w: canvas.clientWidth, h: canvas.clientHeight };
+}
+
+function drawBase() {
+  // clear using device size then draw based on CSS sizes
   ctx.clearRect(0, 0, stickCanvas.width, stickCanvas.height);
 
-  const baseY = stickCanvas.height - 50;
-  const overflowFraction = 0.10; // extra width beyond target
-  const maxSum = targetSum * (1 + overflowFraction);
-  const scale = stickCanvas.width / maxSum;
+  const { w: cW, h: cH } = cssSize(stickCanvas);
+  const baseY = cH - 50;
+  const overflowFraction = 0.10;
+  const maxSum = Math.max(targetSum * (1 + overflowFraction), 0.001);
+  const scale = cW / maxSum;   // pixels per unit (CSS pixels)
 
-  // Draw base line
+  // Draw baseline
   ctx.strokeStyle = "#aaa";
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(0, baseY);
-  ctx.lineTo(stickCanvas.width, baseY);
+  ctx.lineTo(cW, baseY);
   ctx.stroke();
 
-  // Draw checkerboard in overflow region
+  // Draw checkerboard overflow region (use CSS coords)
   const checkerStartX = targetSum * scale;
-  const checkerEndX = stickCanvas.width;
-  const checkerHeight = stickCanvas.height;
+  const checkerEndX = cW;
+  const checkerHeight = cH;
   const boxSize = 8;
 
   for (let y = 0; y < checkerHeight; y += boxSize) {
@@ -420,104 +436,96 @@ function drawBase() {
   return baseY;
 }
 
-
-function drawStickSegment(x, width, y, index, val, isLast=false) {
-  const stickHeight = stickCanvas.height * 0.50;
+function drawStickSegment(xCss, widthCss, yCss, index, val, isLast=false) {
+  const { w: cW, h: cH } = cssSize(stickCanvas);
+  const stickHeight = cH * 0.50;
   const color = getStickColor(index);
 
-  // Draw stick
+  // draw using CSS pixel coordinates (ctx already scaled)
   ctx.fillStyle = color;
-  ctx.fillRect(x, y, width, stickHeight);
+  ctx.fillRect(xCss, yCss, widthCss, stickHeight);
 
   ctx.lineWidth = 6;
   ctx.strokeStyle = 'black';
-  ctx.strokeRect(x, y, width, stickHeight);
+  ctx.strokeRect(xCss, yCss, widthCss, stickHeight);
 
-  // Base font from stick height
+  // font sizing using CSS pixels
   let baseFont = stickHeight * 0.8;
   let fontSize;
-
-  // Tiny stick threshold = 4% of target
   const tinyThreshold = 0.045 * targetSum;
 
   if (val <= tinyThreshold) {
-    // Scale font proportionally to value/threshold
-    const scaleFactor = val / tinyThreshold;        // 0 -> 1
-    fontSize = baseFont * 0.5 * scaleFactor;       // max shrink factor = 0.5
-    fontSize = Math.max(6, fontSize);              // minimum font
+    const scaleFactor = val / tinyThreshold;
+    fontSize = baseFont * 0.5 * scaleFactor;
+    fontSize = Math.max(6, fontSize);
   } else {
-    // Normal font, mild shrink if target > 1
     fontSize = baseFont * (targetSum > 1 ? 1 / Math.pow(targetSum, 0.25) : 1);
-    fontSize = Math.min(38, fontSize);            // max font
+    fontSize = Math.min(38, fontSize);
   }
 
   ctx.font = `bold ${fontSize}px Segoe UI`;
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#000';
 
-  const cy = y + stickHeight / 2;
+  const cy = yCss + stickHeight / 2;
 
-  // Default label position: center
-  let textX = x + width / 2;
-  ctx.textAlign = 'center';
+  // label position (center or shifted if last truncated)
+  let textX = xCss + widthCss / 2;
 
-  // Adjust last stick label if partially off-screen
   if (isLast) {
-    const canvasRight = stickCanvas.width;
-    const visibleWidth = Math.min(width, canvasRight - x);
-    const fractionVisible = visibleWidth / width;
-
-    // If less than 60% visible, shift label left
+    const canvasRight = cW;
+    const visibleWidth = Math.min(widthCss, canvasRight - xCss);
+    const fractionVisible = visibleWidth / widthCss;
     const shiftThreshold = 0.6;
     if (fractionVisible < shiftThreshold) {
-        textX = x + width * fractionVisible / 2;
+      textX = xCss + widthCss * fractionVisible / 2;
     } else {
-        textX = x + width / 2;
+      textX = xCss + widthCss / 2;
     }
   }
 
-  // Draw stick value
+  ctx.textAlign = 'center';
   ctx.fillText(val.toFixed(2), textX, cy);
 }
-
 
 
 // Animated drop
 async function dropStickAnimated(len, index) {
   const baseY = drawBase();
-  const scale = stickCanvas.width / (targetSum * 1.1);
-  const stickWidth = len * scale;
+  const { w: cW } = cssSize(stickCanvas);
+  const overflowFraction = 0.10;
+  const maxSum = Math.max(targetSum * (1 + overflowFraction), 0.001);
+  const scale = cW / maxSum;            // CSS pixels per unit
+  const stickWidthCss = len * scale;
 
-  // Compute x position once for this stick
+  // compute x in CSS pixels from sum of previous sticks (currentSticks holds raw numbers)
   const x = currentSticks.slice(0, index).reduce((a, b) => a + b, 0) * scale;
 
-  let y = -60; // start above canvas
+  let y = -60; // start above canvas (CSS px)
   return new Promise(resolve => {
     function fall() {
       drawBase();
 
-      // Draw previous sticks at their final positions
+      // draw previous sticks at final positions
       let px = 0;
       for (let i = 0; i < index; i++) {
-        const w = currentSticks[i] * scale;
-        drawStickSegment(px, w, baseY - 28, i, currentSticks[i], false);
-        px += w;
+        const wCss = currentSticks[i] * scale;
+        drawStickSegment(px, wCss, baseY - 28, i, currentSticks[i], false);
+        px += wCss;
       }
 
-      // Draw falling stick
       if (y < baseY - 28) {
         y += 7;
-        drawStickSegment(x, stickWidth, y, index, len, false);
+        drawStickSegment(x, stickWidthCss, y, index, len, false);
         requestAnimationFrame(fall);
       } else {
-        drawStickSegment(x, stickWidth, baseY - 28, index, len, true);
+        drawStickSegment(x, stickWidthCss, baseY - 28, index, len, true);
         resolve();
       }
     }
     fall();
   });
 }
-
 
 function resetTrialState(){ currentSticks=[]; currentSum=0; drawBase(); dropOneActive=false; }
 function endTrial(){ trialResults.push(currentSticks.length); lastStickIndices.push(currentSticks.length-1); dropOneActive=false; updateHistogram(); updateStats(); updateLastTrialBox(); }
@@ -667,8 +675,11 @@ function updateHistTable() {
 
 // --- Histogram Drawing ---
 function updateHistogram() {
-  histCtx.clearRect(0,0,histCanvas.width,histCanvas.height);
+  // Fill background first
+  histCtx.fillStyle = 'rgba(30,30,50,0.9)';  // same as old background
+  histCtx.fillRect(0, 0, histCanvas.width, histCanvas.height);
 
+  // --- rest of your histogram drawing code ---
   const topPadding = 40;
   const bottomPadding = 60;
   const leftPadding = 70;
@@ -677,11 +688,10 @@ function updateHistogram() {
   const plotWidth = histCanvas.width - leftPadding - rightPadding;
   const plotHeight = histCanvas.height - topPadding - bottomPadding;
 
-  if(trialResults.length===0) {
+  if(trialResults.length===0){
     updateHistTable();
     return;
   }
-
   let labels, maxVal;
 
   if(targetSum > 4){
@@ -792,28 +802,31 @@ function runTrials(n,reset=true){ if(reset) resetTrialState();
   updateHistogram(); updateStats(); if(reset) resetTrialState();
 }
 
-// --- Canvas DPI fix ---
-function fixCanvasDPI(canvas,ctx){
-  const dpr=window.devicePixelRatio||1;
-  const rect=canvas.getBoundingClientRect();
-  canvas.width=rect.width*dpr;
-  canvas.height=rect.height*dpr;
-  ctx.scale(dpr,dpr);
-}
 fixCanvasDPI(stickCanvas,ctx); fixCanvasDPI(histCanvas,histCtx);
 drawBase(); updateHistogram();
 
 window.addEventListener('resize',()=>{ fixCanvasDPI(stickCanvas,ctx); fixCanvasDPI(histCanvas,histCtx); drawBase(); updateHistogram(); });
 
 function resizeCanvases() {
-    fixCanvasDPI(stickCanvas, ctx);
-    fixCanvasDPI(histCanvas, histCtx);
-    drawBase();
-    updateHistogram();
+  // Stick canvas
+  const stick = document.getElementById("stickCanvas");
+  stick.width  = stick.clientWidth;
+  stick.height = stick.clientHeight;
+
+  // Histogram canvas
+  const hist = document.getElementById("histCanvas");
+  hist.width  = hist.clientWidth;
+  hist.height = hist.clientHeight;
+
+  // Redraw after resizing
+  drawSticks();
+  updateHistogram();
 }
 
-window.addEventListener('resize', resizeCanvases);
-resizeCanvases(); // call once on load
+// Call on load + on resize
+window.addEventListener("load", resizeCanvases);
+window.addEventListener("resize", resizeCanvases);
+
 
 </script>
 
