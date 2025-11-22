@@ -215,23 +215,17 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
-  #stats, #lastTrialBox, #histTableContainer, .collapsible-content {
-    font-size: 16px;  /* smaller for phones */
-    padding: 10px;
+  .collapsible {
+    font-size: 18px;        /* readable */
+    padding: 12px 24px;     /* enough space around text */
+    display: block;          /* block so width is controllable */
+    width: auto;             /* size to content */
+    max-width: 95%;          /* don’t overflow screen */
+    white-space: normal;     /* allow wrapping if needed */
+    text-align: left;        /* arrow on right */
   }
 }
 
-@media (max-width: 768px) {
-  .collapsible {
-    font-size: 18px;          /* readable */
-    padding: 12px 24px;       /* enough space around text */
-    display: inline-block;     /* shrink to fit text */
-    min-width: auto;           /* let it size naturally */
-    max-width: 80%;            /* optional: prevent overshooting screen */
-    white-space: normal;       /* allow text to wrap if needed */
-    text-align: left;          /* keep the arrow on the right */
-  }
-}
 
 
 
