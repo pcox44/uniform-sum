@@ -472,6 +472,14 @@ function drawStickSegment(xCss, widthCss, yCss, index, val, isLast=false) {
     fontSize = Math.min(38, fontSize);
   }
 
+  // ------------------------------------------
+  // 📱 MOBILE LABEL SCALING (new)
+  // ------------------------------------------
+  if (window.innerWidth < 768) {
+    fontSize *= 0.75;     // 45% smaller on mobile
+  }
+  // ------------------------------------------
+
   ctx.font = `bold ${fontSize}px Segoe UI`;
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#000';
@@ -496,6 +504,7 @@ function drawStickSegment(xCss, widthCss, yCss, index, val, isLast=false) {
   ctx.textAlign = 'center';
   ctx.fillText(val.toFixed(2), textX, cy);
 }
+
 
 
 // Animated drop
@@ -688,8 +697,9 @@ function updateHistogram() {
     const plotHeight = cH - topPadding - bottomPadding;
 
     // clear background using CSS pixels
-    histCtx.fillStyle = 'rgba(30,30,50,0.9)';
+    histCtx.fillStyle = 'rgb(30,30,50)'; // remove alpha
     histCtx.fillRect(0, 0, cW, cH);
+
 
     if(trialResults.length===0){
         updateHistTable();
