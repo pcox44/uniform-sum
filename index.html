@@ -255,7 +255,12 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
   label { font-size: 14px; }
 
   /* Let canvases shrink normally */
-  #stickCanvas,
+  #stickCanvas {
+    width: 100%;
+    height: auto;       /* remove forced zoom */
+    min-height: 100px;  /* reasonable minimum */
+  }
+  
   #histCanvas {
     width: 100%;
     height: auto;       /* remove forced zoom */
