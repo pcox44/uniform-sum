@@ -215,18 +215,21 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
-  .collapsible {
-    font-size: 18px;        /* readable */
-    padding: 12px 24px;     /* enough space around text */
-    display: block;          /* block so width is controllable */
-    width: auto;             /* size to content */
-    max-width: 95%;          /* don’t overflow screen */
-    white-space: normal;     /* allow wrapping if needed */
-    text-align: left;        /* arrow on right */
+  #stats, #lastTrialBox, #histTableContainer, .collapsible-content {
+    font-size: 16px;  /* smaller for phones */
+    padding: 10px;
   }
 }
 
-
+@media (max-width: 768px) {
+  .collapsible {
+    font-size: 18px;        /* slightly bigger for readability */
+    padding: 16px 20px;     /* bigger touch area */
+    display: inline-block;   /* size to fit text */
+    min-width: 200px;        /* optional: prevent it from being too small */
+    text-align: left;
+  }
+}
 
 
 .stickSpan { display:inline-block; margin:2px 4px; padding:2px 4px; border-radius:3px; }
