@@ -817,8 +817,14 @@ function handleResize() {
   updateHistogram();   // redraw histogram
 }
 
-window.addEventListener('load', handleResize);
+window.addEventListener('load', () => {
+  // wait one frame to ensure CSS layout is applied
+  requestAnimationFrame(() => {
+    handleResize();
+  });
+});
 window.addEventListener('resize', handleResize);
+
 
 </script>
 
