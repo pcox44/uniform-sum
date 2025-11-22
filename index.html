@@ -209,8 +209,18 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
   background: rgba(30,30,60,0.95);
   border-radius: 10px;
   margin-bottom: 12px;
-  font-size: 24px;
+  font-size: 24px; /* desktop size */
+  line-height: 1.5;
 }
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  #stats, #lastTrialBox, #histTableContainer, .collapsible-content {
+    font-size: 16px;  /* smaller for phones */
+    padding: 10px;
+  }
+}
+
 
 .stickSpan { display:inline-block; margin:2px 4px; padding:2px 4px; border-radius:3px; }
 
