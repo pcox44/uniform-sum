@@ -780,6 +780,15 @@ function updateHistogram() {
     updateHistTable();
 }
 
+function init() {
+  handleResize(); // initial draw
+
+  // fallback to ensure mobile layout has settled
+  setTimeout(() => handleResize(), 50);
+}
+
+window.addEventListener('load', init);
+window.addEventListener('resize', handleResize);
 
 
 // --- Button events ---
@@ -805,24 +814,21 @@ function runTrials(n,reset=true){ if(reset) resetTrialState();
   updateHistogram(); updateStats(); if(reset) resetTrialState();
 }
 
-fixCanvasDPI(stickCanvas,ctx); fixCanvasDPI(histCanvas,histCtx);
-drawBase(); updateHistogram();
 
-window.addEventListener('resize',()=>{ fixCanvasDPI(stickCanvas,ctx); fixCanvasDPI(histCanvas,histCtx); drawBase(); updateHistogram(); });
 
 function handleResize() {
   fixCanvasDPI(stickCanvas, ctx);
   fixCanvasDPI(histCanvas, histCtx);
-  drawBase();          // redraw the sticks baseline
-  updateHistogram();   // redraw histogram
+  drawBase();
+  updateHistogram();
 }
 
-window.addEventListener('load', () => {
-  // wait one frame to ensure CSS layout is applied
-  requestAnimationFrame(() => {
-    handleResize();
-  });
-});
+function init() {
+  handleResize();
+  setTimeout(() => handleResize(), 50); // extra frame for mobile
+}
+
+window.addEventListener('load', init);
 window.addEventListener('resize', handleResize);
 
 
