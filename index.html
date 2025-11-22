@@ -112,24 +112,39 @@ body {
 .left-panel { flex: 0 0 67%; min-width: 260px; }
 .right-panel { flex: 0 0 33%; min-width: 220px; }
 
-#stickCanvas {
-  width: 100%;
-  height: 120px;      /* old desktop height */
-  background: rgba(20,20,40,0.9);
+/* Canvases scale with container width */
+#stickCanvas, #histCanvas {
+  width: 100%;         /* always full width of container */
+  border-radius: 10px;
+  display: block;
 }
 
-#histCanvas {
-  width: 100%;
-  height: 300px;      /* old histogram height */
-}
+/* Desktop heights */
+#stickCanvas { height: 120px; background: rgba(20,20,40,0.9); box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
+#histCanvas  { height: 300px; background: rgba(30,30,50,0.9); }
 
+/* Mobile adjustments */
 @media (max-width: 768px) {
-  #stickCanvas {
-    height: 200px;    /* taller on mobile to see sticks better */
-  }
-  #histCanvas {
-    height: 200px;    /* smaller on mobile */
-  }
+  #stickCanvas { height: 200px; }
+  #histCanvas  { height: 250px; }
+
+  .container { flex-wrap: wrap; }
+  .left-panel, .right-panel { flex: 1 1 100%; min-width: 0; }
+
+  button { font-size: 12px; padding: 6px 10px; }
+  label { font-size: 14px; }
+}
+
+
+
+/* Last trial & stats box */
+#stats, #lastTrialBox {
+  padding: 12px;
+  background: rgba(30,30,60,0.95);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  font-size: 18px;
+  overflow-x: auto; /* allow horizontal scroll if content is wide */
 }
 
 /* Mobile adjustments */
@@ -383,17 +398,21 @@ const colors = ['#ff9800','#00ff00','#ff00ff','#ff1744','#00FFFF','#B57EDC','#ff
 
 function getStickColor(i){ return colors[i%colors.length]; }
 
-function fixCanvasDPI(canvas, ctx) {
+function fixCanvasDPI(canvas, ctx){
   const dpr = window.devicePixelRatio || 1;
-  // get CSS size
   const rect = canvas.getBoundingClientRect();
-  // set backing store size in device pixels
-  canvas.width = Math.round(rect.width * dpr);
-  canvas.height = Math.round(rect.height * dpr);
-  // reset transform and scale so drawing uses CSS pixels
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
   ctx.scale(dpr, dpr);
 }
+
+window.addEventListener('resize', () => {
+  fixCanvasDPI(stickCanvas, ctx);
+  fixCanvasDPI(histCanvas, histCtx);
+  drawBase();
+  updateHistogram();
+});
+
 
 function cssSize(canvas) {
   // use clientWidth/clientHeight which represent CSS pixels
@@ -537,25 +556,19 @@ function fmt(x) {
 // Update the "Last Trial" box
 // Update the "Last Trial" box with 3 decimals for stick values
 function updateLastTrialBox() {
+  // clear if no sticks
   if (currentSticks.length === 0) {
-    lastTrialBox.innerHTML = `
-  <div class="card">
-    <strong>Last trial:</strong>
-    <div style="margin:6px 0;">${content}</div>
-    <div><strong>Sum:</strong> ${sum.toFixed(3)} > ${targetSum.toFixed(3)}</div>
-    <div><strong>Sticks used:</strong> ${currentSticks.length}</div>
-  </div>
-`;
-
+    lastTrialBox.innerHTML = '';
     return;
   }
 
   let sum = 0;
   let content = '';
-  currentSticks.forEach((v, i) => {
+  currentSticks.forEach((v,i)=>{
     sum += v;
-    const isLast = sum > targetSum;
     const color = getStickColor(i);
+    const isLast = sum > targetSum;
+
     content += `<span class="stickSpan" style="
       color:${color};
       ${isLast ? `border:2px solid ${color}; border-radius:4px; background: rgba(255,255,255,0.1); padding:2px 4px;` : ''}">
@@ -564,7 +577,7 @@ function updateLastTrialBox() {
   });
 
   lastTrialBox.innerHTML = `
-    <div style="padding:12px; border-radius:10px; background: rgba(255,255,255,0.05);">
+    <div class="card">
       <strong>Last trial:</strong>
       <div style="margin:6px 0;">${content}</div>
       <div><strong>Sum:</strong> ${sum.toFixed(3)} > ${targetSum.toFixed(3)}</div>
