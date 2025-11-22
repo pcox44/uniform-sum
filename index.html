@@ -225,9 +225,12 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
   .collapsible {
     font-size: 18px;        /* slightly bigger for readability */
     padding: 16px 20px;     /* bigger touch area */
-    width: 50%;            /* span full container */
+    display: inline-block;   /* size to fit text */
+    min-width: 200px;        /* optional: prevent it from being too small */
+    text-align: left;
   }
 }
+
 
 .stickSpan { display:inline-block; margin:2px 4px; padding:2px 4px; border-radius:3px; }
 
