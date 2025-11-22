@@ -780,12 +780,6 @@ function updateHistogram() {
     updateHistTable();
 }
 
-function init() {
-  handleResize(); // initial draw
-
-  // fallback to ensure mobile layout has settled
-  setTimeout(() => handleResize(), 50);
-}
 
 window.addEventListener('load', init);
 window.addEventListener('resize', handleResize);
@@ -824,12 +818,18 @@ function handleResize() {
 }
 
 function init() {
-  handleResize();
-  setTimeout(() => handleResize(), 50); // extra frame for mobile
+  // Wait for one animation frame to ensure layout has settled
+  requestAnimationFrame(() => {
+    handleResize();
+
+    // Optional extra frame for really slow mobile rendering
+    requestAnimationFrame(handleResize);
+  });
 }
 
 window.addEventListener('load', init);
 window.addEventListener('resize', handleResize);
+
 
 
 </script>
