@@ -721,18 +721,26 @@ function updateHistogram() {
     const plotWidth = cW - leftPadding - rightPadding;
     const plotHeight = cH - topPadding - bottomPadding;
 
-    // clear background using CSS pixels
-    histCtx.fillStyle = 'rgb(30,30,50)'; // remove alpha
+    // clear background
+    histCtx.fillStyle = 'rgb(30,30,50)';
     histCtx.fillRect(0, 0, cW, cH);
 
-
-    if(trialResults.length===0){
+    if (trialResults.length === 0) {
         updateHistTable();
         return;
     }
 
-    const maxVal = Math.max(...trialResults, 10);
-    const labels = Array.from({length:maxVal},(_,i)=>i+1);
+    const rawMin = Math.min(...trialResults);
+    const rawMax = Math.max(...trialResults);
+    const target = Math.max(rawMax, 10);
+
+    // x-axis minimum: shift 3 below rawMin only if target > 10
+    const minVal = (target > 10) ? Math.max(1, rawMin - 9) : 1;
+
+    // create labels from minVal to target
+    const labels = Array.from({ length: target - minVal + 1 }, (_, i) => i + minVal);
+
+    // counts and proportions
     const counts = labels.map(l => trialResults.filter(v => v === l).length);
     const proportions = counts.map(c => c / trialResults.length);
     const maxProp = Math.max(...proportions);
@@ -747,8 +755,8 @@ function updateHistogram() {
     histCtx.textAlign = 'right';
     histCtx.textBaseline = 'middle';
     const ySteps = 5;
-    for(let i=0;i<=ySteps;i++){
-        const prop = (i/ySteps)*maxProp;
+    for (let i = 0; i <= ySteps; i++) {
+        const prop = (i / ySteps) * maxProp;
         const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
         histCtx.beginPath();
         histCtx.moveTo(leftPadding, yPos);
@@ -758,27 +766,33 @@ function updateHistogram() {
     }
 
     // draw bars
-    labels.forEach((label,i)=>{
-        const h = proportions[i]/yMax*plotHeight;
-        const color = getStickColor(label-1);
+    labels.forEach((label, i) => {
+        const h = proportions[i] / yMax * plotHeight;
+        const color = getStickColor(label - 1); // adjust if getStickColor expects 0-based index
         histCtx.fillStyle = color;
-        histCtx.fillRect(leftPadding + i*(plotWidth/labels.length) + barWidth*0.1,
-                         topPadding + plotHeight - h,
-                         barWidth,
-                         h);
+        histCtx.fillRect(
+            leftPadding + i * (plotWidth / labels.length) + barWidth * 0.1,
+            topPadding + plotHeight - h,
+            barWidth,
+            h
+        );
+
+        // x-axis numbers
         histCtx.fillStyle = '#fff';
         histCtx.textAlign = 'center';
         histCtx.textBaseline = 'top';
-        histCtx.fillText(label, leftPadding + i*(plotWidth/labels.length)+barWidth/2, topPadding + plotHeight + 5);
+        histCtx.fillText(label, leftPadding + i * (plotWidth / labels.length) + barWidth / 2, topPadding + plotHeight + 5);
     });
 
     // x-axis label
     histCtx.textAlign = 'center';
     histCtx.textBaseline = 'top';
-    histCtx.fillText('Sticks Needed', leftPadding + plotWidth/2, cH - bottomPadding + 20);
+    histCtx.fillText('Sticks Needed', leftPadding + plotWidth / 2, cH - bottomPadding + 20);
 
     updateHistTable();
 }
+
+
 
 
 window.addEventListener('load', init);
