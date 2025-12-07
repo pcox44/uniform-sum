@@ -337,7 +337,7 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
 <div class="collapsible-content" style="font-size: 18px; line-height: 1.6; padding: 4px 2px;">
 
   <p>
-    We generate independent uniform random variables 
+    We generate independent uniform random variables  
     \(X_1, X_2, X_3, \dots \sim \mathrm{Uniform}(0,1)\), and let
     \[
       S_n = X_1 + X_2 + \cdots + X_n
@@ -350,11 +350,16 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
   </p>
 
   <p>
-    The probability that the first \(n\) sticks stay under 1 is the probability that
-    \(N > n\). To find the expected number of sticks, we sum over all possible \(n\):
+    The probability that exactly \(n\) sticks are needed is
     \[
-      \mathbb{E}[N] = \sum_{n=1}^{\infty} n \cdot \mathbb{P}(N = n).
+      \mathbb{P}(N = n) = \frac{1}{n!}.
     \]
+    Therefore, the expected number of sticks is
+    \[
+      \mathbb{E}[N] = \sum_{n=1}^{\infty} n \cdot \frac{1}{n!} 
+      = \sum_{n=0}^{\infty} \frac{1}{n!} = e.
+    \]
+    This explains why simulations cluster around \(e \approx 2.718\).
   </p>
 
   <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
@@ -364,17 +369,21 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
   <p>
     The condition \(S_n \le 1\) describes an \(n\)-dimensional simplex:
     \[
-      \{(x_1, \dots, x_n) : x_i \ge 0, \, x_1 + \cdots + x_n \le 1\}.
+      \{(x_1, \dots, x_n) : x_i \ge 0,\; x_1 + \cdots + x_n \le 1\}.
     \]
-    Geometrically, this simplex contains all sequences of \(n\) sticks whose sum stays below 1. Its volume is
+    Geometrically, this simplex contains all sequences of \(n\) sticks whose sum stays under 1. 
+    Its volume is
     \(\mathrm{Vol} = \frac{1}{n!}\), which equals the probability that the first \(n\) sticks do not exceed 1.
   </p>
 
   <p>
-    Think of the next stick as the “height” above this simplex. The fraction of the height that extends beyond 1 is exactly the probability that the \((n+1)\)-th stick pushes the total past 1. In this way, each successive simplex captures the chance of survival for one more stick, and the volume of the \(n\)-dimensional simplex directly gives \(\mathbb{P}(N = n+1) = 1/n!\).
+    You can think of the \((n+1)\)-th stick as the “height” above the simplex — 
+    the fraction of this height beyond 1 is exactly the chance it pushes the total past the target. 
+    In this way, the simplex volume gives \(\mathbb{P}(N = n+1) = 1/n!\), connecting the geometry directly to the stopping probability.
   </p>
 
 </div>
+
 
 
 
