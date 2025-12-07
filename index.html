@@ -337,30 +337,29 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
 <div class="collapsible-content" style="font-size: 18px; line-height: 1.6; padding: 4px 2px;">
 
   <p>
-    We generate independent uniform random variables  
-    \(X_1, X_2, X_3, \ldots \sim \mathrm{Uniform}(0,1)\).
+    Consider independent random variables 
+    \(X_1, X_2, X_3, \dots \sim \mathrm{Uniform}(0,1)\). 
     Let
     \[
-      S_n = X_1 + X_2 + \cdots + X_n,
+      S_n = X_1 + X_2 + \cdots + X_n
     \]
-    and define the stopping time
+    be the sum of the first \(n\) sticks, and define the stopping time
     \[
-      N = \min \{ n : S_n > 1 \}.
+      N = \min \{ n : S_n > 1 \},
     \]
+    which is the first stick that causes the total to exceed 1.
   </p>
 
   <p>
-    A classical result states:
+    A classical result states that
     \[
       \mathbb{P}(N = n) = \frac{1}{n!}.
     \]
-    Therefore the expected number of sticks needed is
+    Therefore, the expected number of sticks is
     \[
-      \mathbb{E}[N]
-      = \sum_{n=1}^{\infty} n \cdot \frac{1}{n!}=\sum_{n=0}^{\infty} \frac{1}{n!}
-      = e.
+      \mathbb{E}[N] = \sum_{n=1}^{\infty} n \cdot \frac{1}{n!} = \sum_{n=0}^{\infty} \frac{1}{n!} = e.
     \]
-    This is why simulations cluster around \(e \approx 2.71828\).
+    This explains why simulations of this process cluster around \(e \approx 2.71828\).
   </p>
 
   <!-- Divider -->
@@ -369,20 +368,29 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
   <p><strong>Geometric / Simplex Explanation</strong></p>
 
   <p>
-    The condition \(S_n \le 1\) describes an \(n\)-dimensional simplex:
+    The condition 
     \[
-      \{(x_1,\ldots,x_n) : x_i \ge 0,\; x_1 + \cdots + x_n \le 1 \}.
+      S_n \le 1
+    \] 
+    defines an \(n\)-dimensional simplex:
+    \[
+      \{(x_1, \dots, x_n) : x_i \ge 0,\; x_1 + \cdots + x_n \le 1 \}.
     \]
     The volume of this simplex is
     \[
-      \mathrm{V} = \frac{1}{n!}
+      \mathrm{Vol} = \frac{1}{n!}.
     \]
-    This volume equals the probability that the first \(n\) sticks
-    do <em>not</em> exceed the target, meaning the \((n+1)\)-th stick
-    is the one that finally pushes the total past 1.
+  </p>
+
+  <p>
+    This volume represents the probability that the first \(n\) sticks 
+    do <em>not</em> exceed the target. Equivalently, it is the probability that 
+    the \((n+1)\)-th stick is the one that finally pushes the total past 1, 
+    which exactly matches the classical result \(\mathbb{P}(N = n+1) = 1/n!\).
   </p>
 
 </div>
+
 
 
 <script>
