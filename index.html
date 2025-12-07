@@ -337,39 +337,25 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
 <div class="collapsible-content" style="font-size: 18px; line-height: 1.6; padding: 4px 2px;">
 
   <p>
-    Let \(X_1, X_2, \dots \sim \mathrm{Uniform}(0,1)\) and
-    \[
-      S_n = X_1 + \cdots + X_n.
-    \]
-    Define the stopping time
-    \[
-      N = \min \{ n : S_n > 1 \},
-    \]
-    the first stick that exceeds the target 1.
-  </p>
+  A classical result states
+  \[
+    \mathbb{P}(N = n) = \frac{1}{n!}.
+  \]
+  Therefore, the expected number of sticks is
+  \[
+    \mathbb{E}[N] = \sum_{n=1}^{\infty} n \cdot \frac{1}{n!}.
+  \]
+  Notice that
+  \[
+    \frac{n}{n!} = \frac{1}{(n-1)!},
+  \]
+  so we can rewrite the sum as
+  \[
+    \mathbb{E}[N] = \sum_{n=1}^{\infty} \frac{1}{(n-1)!} = \sum_{k=0}^{\infty} \frac{1}{k!} = e.
+  \]
+  Intuitively, this means it takes about \(e \approx 2.718\) sticks on average for the total to exceed 1, which matches what simulations show.
+</p>
 
-  <p>
-    A classical result gives
-    \[
-      \mathbb{P}(N = n) = \frac{1}{n!}, \quad 
-      \mathbb{E}[N] = \sum_{n=1}^{\infty} \frac{n}{n!} = e.
-    \]
-    This explains why simulations cluster around \(e \approx 2.718\).
-  </p>
-
-  <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
-
-  <p><strong>Geometric / Simplex Explanation</strong></p>
-
-  <p>
-    The condition \(S_n \le 1\) defines an \(n\)-dimensional simplex:
-    \[
-      \{(x_1, \dots, x_n) : x_i \ge 0,\, x_1 + \cdots + x_n \le 1 \}, 
-      \quad \text{with volume } \frac{1}{n!}.
-    \]
-    This volume equals the probability that the first \(n\) sticks stay under 1,
-    i.e., that the \((n+1)\)-th stick is the one that finally exceeds the target.
-  </p>
 
 </div>
 
