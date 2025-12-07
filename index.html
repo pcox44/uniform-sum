@@ -366,17 +366,16 @@ input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff;
     \[
       \{(x_1, \dots, x_n) : x_i \ge 0, \, x_1 + \cdots + x_n \le 1\}.
     \]
-    Geometrically, this simplex contains all sequences of \(n\) sticks whose sum stays below 1.
+    Geometrically, this simplex contains all sequences of \(n\) sticks whose sum stays below 1. Its volume is
+    \(\mathrm{Vol} = \frac{1}{n!}\), which equals the probability that the first \(n\) sticks do not exceed 1.
   </p>
 
   <p>
-    The volume of this simplex is
-    \(\mathrm{Vol} = \frac{1}{n!}\). This exactly equals the probability that the first \(n\) sticks do not exceed 1. 
-    In other words, the volume measures the chance that the \((n+1)\)-th stick is the one that finally pushes the total past 1.  
-    This makes the connection between the geometry of the simplex and the probabilities \(1/n!\) completely clear.
+    Think of the next stick as the “height” above this simplex. The fraction of the height that extends beyond 1 is exactly the probability that the \((n+1)\)-th stick pushes the total past 1. In this way, each successive simplex captures the chance of survival for one more stick, and the volume of the \(n\)-dimensional simplex directly gives \(\mathbb{P}(N = n+1) = 1/n!\).
   </p>
 
 </div>
+
 
 
 
