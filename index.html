@@ -1,857 +1,1341 @@
 <!DOCTYPE html>
 <html lang="en">
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Uniform Sum Simulation</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>You Gotta Know – AP Calculus Flashcards</title>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    macros: { dlim: ['\\displaystyle\\lim'] }
+  },
+  startup: { typeset: false }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 <style>
-
-/* Target input styling */
-#targetSumInput {
-  width: 80px;           /* make it wider */
-  text-align: center;    /* center the number */
-  font-size: 20px;       /* optional: make the number bigger */
-  padding: 6px 10px;     /* slightly bigger padding */
-  border-radius: 8px;
-  border: 2px solid #26a69a;
-  background: rgba(10,10,30,0.9);
-  color: #fff;
-  outline: none;
-  box-shadow: inset 0 0 6px rgba(0,255,255,0.2);
+:root {
+  --bg: #eef2ff;
+  --ink: #111827;
+  --panel: #ffffff;
+  --border: #111827;
+  --muted: #4b5563;
+  --blue: #1e3a8a;
 }
-
-/* Remove up/down arrow */
-#targetSumInput::-webkit-inner-spin-button,
-#targetSumInput::-webkit-outer-spin-button {
-  -webkit-appearance: none;
+* { box-sizing: border-box; }
+body {
+  margin: 24px;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+h1 {
+  text-align: center;
   margin: 0;
+  font-size: clamp(2.25rem, 5vw, 4.25rem);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
 }
-#targetSumInput {
-  -moz-appearance: textfield;
-}
-
-#topDesc {
-  padding: 10px 16px;
-  background: rgba(20,20,40,0.9);
-  border-radius: 10px;
-  line-height: 1.5;
-  margin-bottom: 24px; /* increase spacing below */
-}
-
-#targetLabel {
-  font-size: 36px;  /* make it bigger */
-  font-weight: bold;
-  color: #b3e5fc;
-  text-shadow: 0 0 8px rgba(0,255,255,0.8);
-}
-
-
-#controls label[for="targetSumInput"] {
-  font-size: 36px;   /* bigger */
-  font-weight: bold;
-}
-
-
-#targetSumInput:focus {
-  border-color: #00e5ff;
-  box-shadow: 0 0 12px rgba(0,255,255,0.7), inset 0 0 8px rgba(0,255,255,0.3);
-}
-
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* Histogram table styling */
-#histTableContainer table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 16px;
-  table-layout: auto;
-}
-
-#histTableContainer th, #histTableContainer td {
-  border: 1px solid rgba(255,255,255,0.3);
-  padding: 10px 14px;
+.subtitle {
   text-align: center;
+  color: var(--muted);
+  margin: 10px auto 18px;
+  font-weight: 800;
+  max-width: 850px;
 }
-
-#histTableContainer th {
-  background: rgba(20, 60, 100, 0.8);
-  color: #b3e5fc;
-  font-weight: bold;
+.hero {
+  max-width: 1200px;
+  margin: 0 auto 18px;
+  padding: 24px 20px 20px;
+  border: 3px solid var(--border);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(255,255,255,.90), rgba(255,255,255,.35) 34%, transparent 35%),
+    linear-gradient(135deg, #fef3c7 0%, #dbeafe 42%, #ede9fe 100%);
+  box-shadow: 0 8px 0 rgba(0,0,0,.20);
+  position: relative;
+  overflow: hidden;
 }
-
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: radial-gradient(circle at top left, #1a237e 0%, #311b92 100%);
-  color: #eee;
-  padding: 20px;
-}
-
-/* remove the forced wide minimum (was causing layout troubles on phones) */
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: radial-gradient(circle at top left, #1a237e 0%, #311b92 100%);
-  color: #eee;
-  padding: 20px;
-  overflow-x: hidden;   /* avoid horizontal scroll on mobile */
-}
-
-/* container becomes fully fluid */
-.container {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 20px;
-  max-width: 1600px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-/* responsive panels */
-.left-panel { flex: 0 0 67%; min-width: 260px; }
-.right-panel { flex: 0 0 33%; min-width: 220px; }
-
-/* Canvases scale with container width */
-#stickCanvas, #histCanvas {
-  width: 100%;         /* always full width of container */
-  border-radius: 10px;
+.hero::after {
+  content: "AP Calculus • AB + BC";
   display: block;
+  width: fit-content;
+  margin: 14px auto 0;
+  padding: 7px 13px;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: white;
+  color: var(--blue);
+  font-weight: 950;
+  font-size: .9rem;
+  letter-spacing: .02em;
 }
-
-/* Desktop heights */
-#stickCanvas { height: 120px; background: rgba(20,20,40,0.9); box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
-#histCanvas  { height: 300px; background: rgba(30,30,50,0.9); }
-
-/* Mobile adjustments */
-@media (max-width: 768px) {
-  #stickCanvas { height: 120px; }
-  #histCanvas  { height: 250px; }
-
-  .container { flex-wrap: wrap; }
-  .left-panel, .right-panel { flex: 1 1 100%; min-width: 0; }
-
-  button { font-size: 12px; padding: 6px 10px; }
-  label { font-size: 14px; }
+.controls {
+  max-width: 1200px;
+  margin: 0 auto 20px;
+  background: var(--panel);
+  border: 3px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 6px 0 rgba(0,0,0,.18);
 }
-
-
-
-/* Last trial & stats box */
-#stats, #lastTrialBox {
-  padding: 12px;
-  background: rgba(30,30,60,0.95);
-  border-radius: 10px;
-  margin-bottom: 12px;
-  font-size: 18px;
-  overflow-x: auto; /* allow horizontal scroll if content is wide */
-}
-
-/* Mobile adjustments */
-@media (max-width: 768px) {
-  #stickCanvas { height: 120px; }
-  #histCanvas  { height: 250px; }
-}
-
-#controls {
+.top-controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  justify-content: center;
   align-items: center;
-  background: rgba(25,25,60,0.85);
-  padding: 12px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  gap: 12px;
+  flex-wrap: wrap;
   margin-bottom: 12px;
 }
-
-/* Buttons styling */
-button { 
-  margin: 8px 6px 8px 0; 
-  padding: 14px 28px;       /* bigger padding */
-  font-size: 16px;          /* slightly larger text */
-  border: none; 
-  border-radius: 10px; 
-  cursor: pointer; 
-  background: linear-gradient(135deg,#26a69a,#004d40); 
-  color:white; 
-  transition: all 0.2s ease;
-  min-width: 120px;          /* ensure wider clickable area */
+.mode-toggle {
+  display: inline-flex;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #f3f4f6;
 }
-
-button:hover { 
-  background: linear-gradient(135deg,#4db6ac,#00695c); 
-  box-shadow: 0 0 12px rgba(0,255,255,0.5);
-  transform: scale(1.05);
+.mode-toggle button {
+  border: 0;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
-
-label {
-  color: #b3e5fc;
-  font-weight: bold;
-  font-size: 16px;
+.mode-toggle button.active {
+  background: #111827;
+  color: white;
 }
-
-input[type="number"] {
-  width: 60px;
-  padding: 6px;
-  font-size: 16px;
-  border-radius: 6px;
-  border: 2px solid #26a69a;
-  background: rgba(10,10,30,0.9);
-  color: #fff;
-  text-align: center;
-  outline: none;
+button, select, input[type="number"], input[type="text"] {
+  font: inherit;
 }
-input[type="number"]:focus { border-color: #00e5ff; box-shadow: 0 0 8px #00e5ff; }
-
-#stats, #lastTrialBox, #histTableContainer, .collapsible-content {
-  padding: 12px;
-  background: rgba(30,30,60,0.95);
+button {
+  margin: 5px;
+  padding: 10px 16px;
+  font-size: 1rem;
+  font-weight: 800;
   border-radius: 10px;
-  margin-bottom: 12px;
-  font-size: 24px; /* desktop size */
-  line-height: 1.5;
-}
-
-/* Mobile adjustments */
-@media (max-width: 768px) {
-  #stats, #lastTrialBox, #histTableContainer, .collapsible-content {
-    font-size: 16px;  /* smaller for phones */
-    padding: 10px;
-  }
-}
-
-@media (max-width: 768px) {
-  .collapsible {
-    font-size: 18px;        /* slightly bigger for readability */
-    padding: 16px 20px;     /* bigger touch area */
-    display: inline-block;   /* size to fit text */
-    min-width: 200px;        /* optional: prevent it from being too small */
-    text-align: left;
-  }
-}
-
-
-.stickSpan { display:inline-block; margin:2px 4px; padding:2px 4px; border-radius:3px; }
-
-.collapsible {
-  background: rgba(30,30,60,0.95);
-  color: #fff;
+  border: 2px solid black;
   cursor: pointer;
-  padding: 10px;
-  border-radius: 10px;
-  font-size: 16px;
-  margin-bottom: 6px;
-  width: 20%;
-  text-align: left;
-  border: none;
+  background: white;
+  box-shadow: 0 3px 0 rgba(0,0,0,.22);
 }
-.collapsible:after { content: '\25BC'; float:right; }
-.collapsible.active:after { content: '\25B2'; }
-.collapsible-content { display:none; }
+button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.22); }
+.btn-green { background: #16a34a; color: white; }
+.btn-red { background: #dc2626; color: white; }
+.btn-purple { background: #7c3aed; color: white; }
+.btn-orange { background: #f97316; color: white; }
+.btn-blue { background: #2563eb; color: white; }
+.btn-teal { background: #0f766e; color: white; }
+.btn-pink { background: #db2777; color: white; }
+.btn-gold { background: #ca8a04; color: white; }
+.btn-slate { background: #334155; color: white; }
+.btn-green:hover { background: #15803d; }
+.btn-red:hover { background: #b91c1c; }
+.btn-purple:hover { background: #6d28d9; }
+.btn-orange:hover { background: #ea580c; }
+.btn-blue:hover { background: #1d4ed8; }
+.btn-teal:hover { background: #115e59; }
+.btn-pink:hover { background: #be185d; }
+.btn-gold:hover { background: #a16207; }
+.btn-slate:hover { background: #1e293b; }
+select, input[type="number"], input[type="text"] {
+  padding: 7px;
+  border: 2px solid #111827;
+  border-radius: 8px;
+  background: white;
+  font-weight: 700;
+}
 
-@media (max-width: 768px) {
-  button { font-size: 12px; padding: 6px 10px; }
-  label { font-size: 14px; }
+.instructions {
+  max-width: 960px;
+  margin: 4px auto 14px;
+  padding: 10px 12px;
+  border: 2px dashed #111827;
+  border-radius: 12px;
+  background: #fff7ed;
+  color: #1f2937;
+  font-size: .92rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+.instructions strong { color: #111827; }
 
-  /* Let canvases shrink normally */
-  #stickCanvas {
-    width: 100%;
-    height: auto;       /* remove forced zoom */
-    min-height: 100px;  /* reasonable minimum */
-  }
-  
-  #histCanvas {
-    width: 100%;
-    height: auto;       /* remove forced zoom */
-    min-height: 150px;  /* reasonable minimum */
-  }
+.quick-quiz input[type="text"] {
+  width: 130px;
+  text-align: center;
+}
 
-  body {
-    min-width: 0;
-    overflow-x: hidden;
-  }
-
-  .container {
-    flex-wrap: wrap;
-  }
-
-  .left-panel, .right-panel {
-    flex: 1 1 100%;
-    min-width: 0;
-  }
+.unit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.unit-control {
+  border: 2px solid #111827;
+  border-radius: 12px;
+  padding: 10px;
+  background: #f9fafb;
+  display: grid;
+  grid-template-columns: 1fr 64px;
+  align-items: center;
+  gap: 8px;
+}
+.unit-control label { font-weight: 800; }
+.unit-control .small { color: var(--muted); font-size: .84rem; font-weight: 700; margin-top: 2px; }
+.quiz {
+  max-width: 1200px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 .card {
-  background: rgba(40,40,70,0.9);
-  border-radius: 12px;
-  padding: 12px 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  margin-bottom: 12px;
+  border: 3px solid black;
+  padding: 20px;
+  border-radius: 14px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 5px 0 rgba(0,0,0,.20);
+}
+.card .label {
+  font-size: .82rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  opacity: .9;
+  margin-bottom: 10px;
+}
+.answer { background: #f8fafc; display: none; }
+.show-answers .answer, .row.revealed .answer { display: flex; }
+.question-card { cursor: pointer; }
+.question-card:hover { filter: brightness(1.03); transform: translateY(-1px); }
+.question-guidance { font-size: .95rem; margin-top: 10px; font-weight: 850; opacity: .92; }
+.unit0 { background: #dc2626; color: white; }
+.unit1 { background: #f97316; color: white; }
+.unit2 { background: #7c3aed; color: white; }
+.unit3 { background: #16a34a; color: white; }
+.unit4 { background: #0284c7; color: white; }
+.unit5 { background: #db2777; color: white; }
+.unit6 { background: #0891b2; color: white; }
+.unit7 { background: #65a30d; color: white; }
+.unit8 { background: #ea580c; color: white; }
+.unitBC { background: #0f766e; color: white; }
+.unit9 { background: #9333ea; color: white; }
+.unit10 { background: #ca8a04; color: white; }
+.board-mode body, body.board-mode { margin: 18px; }
+body.board-mode .controls { display: none; }
+.board-home {
+  display: none;
+  position: sticky;
+  top: 10px;
+  z-index: 10;
+  margin: 0 auto 14px;
+  width: fit-content;
+}
+body.board-mode .board-home { display: block; }
+body.board-mode h1 { font-size: 3.2rem; }
+body.board-mode .subtitle { font-size: 1.35rem; }
+body.board-mode .card { font-size: 2rem; min-height: 250px; padding: 34px; }
+body.board-mode .card .label { font-size: 1rem; }
+.bc-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .04em;
+}
+.question-guidance {
+  color: rgba(255,255,255,.95);
+}
+.answer .question-guidance { color: #374151; }
+
+.print-area { display: none; }
+.print-note { text-align:center; font-weight:900; margin: 12px auto; color:#4b5563; }
+
+@media print {
+  @page { size: letter portrait; margin: 0.25in; }
+  html, body { background: white !important; margin: 0 !important; padding: 0 !important; color: black; }
+
+  /* Prevent the visible home page from becoming a blank first printed page. */
+  body > * { display: none !important; }
+  body > .print-area { display: block !important; }
+
+  .print-page {
+    page-break-after: always;
+    break-after: page;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(2, 1fr);
+    gap: 1in;
+    height: 10.5in;
+    max-height: 10.5in;
+    overflow: hidden;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .print-page:last-child { page-break-after: auto !important; break-after: auto !important; }
+  .mini-quiz {
+    border: 1.5px solid black;
+    border-radius: 8px;
+    padding: 0.10in;
+    overflow: hidden;
+    font-size: 9.6pt;
+    line-height: 1.16;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .mini-quiz h2 {
+    margin: 0 0 0.02in 0;
+    text-align: center;
+    font-size: 11pt;
+    border-bottom: 1.2px solid black;
+    padding-bottom: 0.018in;
+  }
+  .mini-quiz .quiz-title {
+    display: block;
+  }
+  .mini-quiz .name-line {
+    display: grid;
+    grid-template-columns: 1fr 0.65fr;
+    gap: 0.035in;
+    margin-bottom: 0.075in;
+    font-size: 8.2pt;
+  }
+  .mini-quiz ol {
+    margin: 0;
+    padding-left: 0.18in;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+  }
+  .mini-quiz li { margin-bottom: 0.04in; }
+  .mini-quiz strong { font-weight: 800; }
+  .answer-line { border-bottom: 0.8px solid #444; height: 0.25in; margin-top: 0.035in; }
+  .question-guidance { font-size: 8.2pt; margin-top: 0.008in; }
 }
 
+@media (max-width: 900px) {
+  .unit-grid { grid-template-columns: 1fr; }
+}
 
-
+@media (max-width: 760px) {
+  body { margin: 12px; }
+  .row { grid-template-columns: 1fr; }
+  .card { font-size: 1.08rem; }
+}
 </style>
 </head>
 
 <body>
-
-<h1>Uniform Sum Simulation</h1>
-
-<div id="topDesc" style="font-size: 18px; line-height: 1.6;">
-  <strong>Process:</strong> 
-  Generate independent random numbers from a uniform distribution on [0,1]. 
-  Lay the “sticks” end-to-end, summing them, until the total exceeds the target. 
-  Count how many sticks are needed.
+<div class="hero" id="home">
+  <h1>You Gotta Know</h1>
 </div>
 
 
-<canvas id="stickCanvas"></canvas>
-
-<div class="container">
-  <div class="left-panel">
-    <div id="controls">
-      <button id="dropStick">Drop 1 Stick</button>
-      <button id="dropOneTrial">Run 1 Trial</button>
-      <button id="drop10">Run 10</button>
-      <button id="drop1000">Run 1000</button>
-      <button id="resetHist">Reset</button>
-      <label for="targetSumInput">Target:</label>
-      <input type="number" id="targetSumInput" value="1" step="0.01" min="0.01">
+<div class="controls">
+  <div class="top-controls">
+    <span style="font-weight:900;">Course:</span>
+    <div class="mode-toggle">
+      <button id="abBtn" class="active" onclick="setMode('AB')">AB</button>
+      <button id="bcBtn" onclick="setMode('BC')">BC</button>
     </div>
-
-    <canvas id="histCanvas"></canvas>
-    <div id="histTableContainer"></div>
+    <button class="btn-red" onclick="resetApp()">Reset</button>
+    <button class="btn-purple" onclick="renderPrintPack()">Print 5 Quiz Pages</button>
   </div>
 
-  <div class="right-panel">
-    <div id="stats"></div>
-    <div id="lastTrialBox"></div>
+  <div class="instructions">
+    <strong>How to use:</strong> Type units like <strong>0</strong>, <strong>1,2,3</strong>, or <strong>0-4</strong>. Click a question card to reveal its answer. Hints tell you what kind of response is expected without giving the answer away.
+  </div>
+
+  <div class="top-controls quick-quiz">
+    <label><strong>Quick Quiz:</strong></label>
+    <span class="small" style="font-weight:800;color:#4b5563;">Enter units, like 0, 1, 2 or 0-4</span>
+    <input type="text" id="quickQuizUnits" value="0" placeholder="0-4" />
+    <button class="btn-green" onclick="generateQuiz()">Generate Quiz</button>
+  </div>
+
+  <div class="top-controls">
+    <label><strong>Study by Unit #:</strong></label>
+    <input type="number" id="studyUnitInput" min="0" max="10" step="0.1" value="1" />
+    <button class="btn-pink" onclick="studyTypedUnit()">Study This Unit</button>
+    <button class="btn-blue" onclick="studyAllCards('AB')">Study All AB Cards</button>
+    <button class="btn-teal" onclick="studyAllCards('BC')">Study All BC Cards</button>
   </div>
 </div>
 
-<button class="collapsible">
-  \(\text{Explanation for Target = 1}\)
-</button>
-
-<div class="collapsible-content" style="font-size: 18px; line-height: 1.6; padding: 4px 2px;">
-
-  <p>
-    We generate independent uniform random variables  
-    \(X_1, X_2, X_3, \dots \sim \mathrm{Uniform}(0,1)\), and let
-    \[
-      S_n = X_1 + X_2 + \cdots + X_n
-    \]
-    be their running total. Define the stopping time
-    \[
-      N = \min \{ n : S_n > 1 \},
-    \]
-    the first stick that pushes the total past 1.
-  </p>
-
-  <p>
-    The probability that exactly \(n\) sticks are needed is
-    \[
-      \mathbb{P}(N = n) = \frac{1}{n!}.
-    \]
-    Therefore, the expected number of sticks is
-    \[
-      \mathbb{E}[N] = \sum_{n=1}^{\infty} n \cdot \frac{1}{n!} 
-      = \sum_{n=0}^{\infty} \frac{1}{n!} = e.
-    \]
-    This explains why simulations cluster around \(e \approx 2.718\).
-  </p>
-
-  <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
-
-  <p><strong>Geometric / Simplex Explanation</strong></p>
-
-  <p>
-    The condition \(S_n \le 1\) describes an \(n\)-dimensional simplex:
-    \[
-      \{(x_1, \dots, x_n) : x_i \ge 0,\; x_1 + \cdots + x_n \le 1\}.
-    \]
-    Geometrically, this simplex contains all sequences of \(n\) sticks whose sum stays under 1. 
-    Its volume is
-    \(\mathrm{Vol} = \frac{1}{n!}\), which equals the probability that the first \(n\) sticks do not exceed 1.
-  </p>
-
-  <p>
-    You can think of the \((n+1)\)-th stick as the “height” above the simplex — 
-    the fraction of this height beyond 1 is exactly the chance it pushes the total past the target. 
-    In this way, the simplex volume gives \(\mathbb{P}(N = n+1) = 1/n!\), connecting the geometry directly to the stopping probability.
-  </p>
-
-</div>
-
-
-
-
-
-
+<div class="quiz" id="quiz"></div>
+<div class="print-area" id="printArea"></div>
 
 <script>
-// Collapsible
-document.querySelectorAll(".collapsible").forEach(btn=>{
-  btn.addEventListener("click",function(){
-    this.classList.toggle("active");
-    const content=this.nextElementSibling;
-    content.style.display=(content.style.display==='block')?'none':'block';
-  });
-});
+const decks = {
+  "unit0": {
+    "label": "Unit 0 – Prerequisite Knowledge",
+    "cls": "unit0",
+    "cards": [
+      {
+        "q": "For the unit circle, what are the coordinates/ratio for \\(\\sin\\theta\\), \\(\\cos\\theta\\), and \\(\\tan\\theta\\)?",
+        "a": "\\(\\sin\\theta=y\\), \\(\\cos\\theta=x\\), and \\(\\tan\\theta=\\frac{y}{x}\\).",
+      },
+      {
+        "q": "What are the reciprocal trig functions on the unit circle?",
+        "a": "\\(\\sec\\theta=\\frac1x\\), \\(\\csc\\theta=\\frac1y\\), and \\(\\cot\\theta=\\frac{x}{y}\\).",
+      },
+      {
+        "q": "State the Pythagorean identity.",
+        "a": "\\(\\sin^2\\theta+\\cos^2\\theta=1\\).",
+      },
+      {
+        "q": "What is \\(\\tan\\theta\\) in terms of sine and cosine?",
+        "a": "\\(\\tan\\theta=\\frac{\\sin\\theta}{\\cos\\theta}\\).",
+      },
+      {
+        "q": "Key trig values at \\(0\\) (sine, cosine, and tangent).",
+        "a": "\\(\\sin 0=0\\), \\(\\cos 0=1\\), \\(\\tan 0=0\\).",
+      },
+      {
+        "q": "Key trig values at \\(\\frac{\\pi}{2}\\) (sine, cosine, and tangent).",
+        "a": "\\(\\sin\\frac{\\pi}{2}=1\\), \\(\\cos\\frac{\\pi}{2}=0\\), and \\(\\tan\\frac{\\pi}{2}\\) is undefined.",
+      },
+      {
+        "q": "Key trig values at \\(\\pi\\). (sine, cosine, and tangent)",
+        "a": "\\(\\sin\\pi=0\\), \\(\\cos\\pi=-1\\), and \\(\\tan\\pi=0\\).",
+      },
+      {
+        "q": "Key trig values at \\(\\frac{3\\pi}{2}\\) (sine, cosine, and tangent).",
+        "a": "\\(\\sin\\frac{3\\pi}{2}=-1\\), \\(\\cos\\frac{3\\pi}{2}=0\\), and \\(\\tan\\frac{3\\pi}{2}\\) is undefined.",
+      },
+      {
+        "q": "When does \\(\\sin x=\\cos x\\) on \\(0\\le x<2\\pi\\)?",
+        "a": "\\(x=\\frac{\\pi}{4}\\) and \\(x=\\frac{5\\pi}{4}\\).",
+      },
+      {
+        "q": "Evaluate \\(e^0, e^1, \\ln(1), \\ln(e)\\).",
+        "a": "\\(e^0=1\\), \\(e^1=e\\), \\(\\ln(1)=0\\), and \\(\\ln(e)=1\\).",
+      },
+      {
+        "q": "Evaluate \\(4^{3/2}\\) and \\(8^{2/3}\\).",
+        "a": "\\(4^{3/2}=8\\) and \\(8^{2/3}=4\\).",
+      },
+      {
+        "q": "How many solutions does \\(a^x=0\\) have?",
+        "a": "No solutions.",
+      },
+      {
+        "q": "Give the three horizontal asymptote degree cases for rational functions.",
+        "a": "Top heavy: no HA. Bottom heavy: \\(y=0\\). Same degree: \\(y=\\frac{\\text{LC}_N}{\\text{LC}_D}\\).",
+      },
+      {
+        "q": "How do you tell vertical asymptote vs hole from a rational expression?",
+        "a": "Denominator zero gives a possible issue. If the factor cancels, it is a hole. If it does not cancel, it is a vertical asymptote.",
+      },
+      {
+        "q": "Factor using difference of squares: \\(x^2-c^2\\).",
+        "a": "\\(x^2-c^2=(x+c)(x-c)\\).",
+      },
+      {
+        "q": "Factor using GCF: \\(x^2+bx\\).",
+        "a": "\\(x^2+bx=x(x+b)\\).",
+      },
+      {
+        "q": "What are the formulas for slope between two points and average rate of change?",
+        "a": "Slope: \\(m=\\frac{y_2-y_1}{x_2-x_1}\\). Average rate of change: \\(\\text{AROC}=\\frac{f(b)-f(a)}{b-a}\\).",
+      },
+      {
+        "q": "Slope-intercept form of a line",
+        "a": "\\(y=mx+b\\).",
+      },
+      {
+        "q": "Point-slope form of a line",
+        "a": "\\(y-y_1=m(x-x_1)\\).",
+      },
+      {
+        "q": "Horizontal line equation",
+        "a": "\\(y=c\\).",
+      },
+      {
+        "q": "Vertical line equation",
+        "a": "\\(x=c\\).",
+      },
+      {
+        "q": "What are the basic area formulas?",
+        "a": "Triangle: \\(A=\\frac12bh\\). Rectangle: \\(A=bh\\). Trapezoid: \\(A=\\frac12(b_1+b_2)h\\). Circle: \\(A=\\pi r^2\\).",
+      },
+      {
+        "q": "What are the basic volume formulas?",
+        "a": "Cylinder: \\(V=\\pi r^2h\\). Cone: \\(V=\\frac13\\pi r^2h\\). Sphere: \\(V=\\frac43\\pi r^3\\). Cube: \\(V=s^3\\).",
+      },
+      {
+        "q": "Rewrite using log properties: \\(\\ln x+\\ln y\\) and \\(\\ln x-\\ln y\\).",
+        "a": "\\(\\ln x+\\ln y=\\ln(xy)\\) and \\(\\ln x-\\ln y=\\ln\\left(\\frac{x}{y}\\right)\\).",
+      },
+      {
+        "q": "Rewrite using the log power property: \\(n\\ln x\\).",
+        "a": "\\(n\\ln x=\\ln(x^n)\\).",
+      },
+      {
+        "q": "Rewrite using exponent properties: \\(a^m a^n\\) and \\(\\frac{a^m}{a^n}\\).",
+        "a": "\\(a^m a^n=a^{m+n}\\) and \\(\\frac{a^m}{a^n}=a^{m-n}\\).",
+      },
+      {
+        "q": "Rewrite using exponent properties: \\(a^{-n}\\) and \\(a^0\\).",
+        "a": "\\(a^{-n}=\\frac{1}{a^n}\\) and \\(a^0=1\\).",
+      },
+      {
+        "q": "Rewrite using exponent properties: \\(a^{1/n}\\) and \\((a^m)^n\\).",
+        "a": "\\(a^{1/n}=\\sqrt[n]{a}\\) and \\((a^m)^n=a^{mn}\\).",
+      },
+      {
+        "q": "For a function \\(f\\), what do increasing, decreasing, concave up, and concave down mean graphically? (4 answers)",
+        "a": "Increasing rises left to right. Decreasing falls left to right. Concave up is a smile. Concave down is a frown.",
+      },
+      {
+        "q": "What is a point of inflection for \\(f\\)?",
+        "a": "A point where the concavity of \\(f\\) changes.",
+      },
+      {
+        "q": "What are even and odd function tests for \\(f\\)?",
+        "a": "Even: \\(f(-x)=f(x)\\). Odd: \\(f(-x)=-f(x)\\).",
+      },
+      {
+        "q": "What is true for inverse functions?",
+        "a": "If \\(f\\) and \\(g\\) are inverses, then \\(f(g(x))=x\\) and \\(g(f(x))=x\\).",
+      }
+    ]
+  },
+  "unit1": {
+    "label": "Unit 1 – Limits & Continuity",
+    "cls": "unit1",
+    "cards": [
+      {
+        "q": "When does \\(\\dlim_{x\\to c}f(x)\\) exist?",
+        "a": "When \\(\\dlim_{x\\to c^-}f(x)=\\dlim_{x\\to c^+}f(x)=L\\).",
+      },
+      {
+        "q": "What are the three conditions for \\(f\\) to be continuous at \\(x=c\\)?",
+        "a": "1. \\(f(c)\\) exists. 2. \\(\\dlim_{x\\to c}f(x)\\) exists. 3. \\(\\dlim_{x\\to c}f(x)=f(c)\\).",
+      },
+      {
+        "q": "What is a removable discontinuity of \\(f\\)?",
+        "a": "A hole: \\(\\dlim_{x\\to c}f(x)\\) exists, but \\(f(c)\\) does not exist or does not equal the limit.",
+      },
+      {
+        "q": "What is a non-removable discontinuity of \\(f\\)?",
+        "a": "A jump or vertical asymptote: one-sided limits disagree, one/both limits DNE, or one/both are \\(\\pm\\infty\\).",
+      },
+      {
+        "q": "What does a vertical asymptote at \\(x=c\\) mean as a limit?",
+        "a": "\\(\\dlim_{x\\to c}f(x)=\\pm\\infty\\) from at least one side.",
+      },
+      {
+        "q": "What does a horizontal asymptote \\(y=L\\) mean as a limit?",
+        "a": "\\(\\dlim_{x\\to\\pm\\infty}f(x)=L\\).",
+      },
+      {
+        "q": "State the Intermediate Value Theorem for \\(f\\).",
+        "a": "If \\(f\\) is continuous on \\([a,b]\\) and \\(N\\) is between \\(f(a)\\) and \\(f(b)\\), then there is some \\(c\\in(a,b)\\) such that \\(f(c)=N\\).",
+      },
+      {
+        "q": "State the Squeeze Theorem for \\(f\\).",
+        "a": "If \\(g(x)\\le f(x)\\le h(x)\\) and \\(\\dlim_{x\\to c}g(x)=\\dlim_{x\\to c}h(x)=L\\), then \\(\\dlim_{x\\to c}f(x)=L\\).",
+      },
+      {
+        "q": "Order these by growth rate from slowest to fastest:  \\(x!\\), \\(x^n\\), \\(\\log x\\),  \\(x^x\\) , \\(a^x\\) .",
+        "a": "\\(\\log x < x^n < a^x < x! < x^x\\).",
+      }
+    ]
+  },
+  "unit2": {
+    "label": "Unit 2 – Derivative Definition & Rules",
+    "cls": "unit2",
+    "cards": [
+      {
+        "q": "State the limit definition of \\(f'\\).",
+        "a": "\\(f'(x)=\\dlim_{h\\to0}\\frac{f(x+h)-f(x)}{h}\\).",
+      },
+      {
+        "q": "State the alternate definition of \\(f'\\) at \\(x=c\\).",
+        "a": "\\(f'(c)=\\dlim_{x\\to c}\\frac{f(x)-f(c)}{x-c}\\).",
+      },
+      {
+        "q": "What does differentiability of \\(f\\) imply?",
+        "a": "If \\(f\\) is differentiable, then \\(f\\) is continuous. Continuity does not guarantee differentiability.",
+      },
+      {
+        "q": "Where is a function \\(f\\) not differentiable? (3 answers)",
+        "a": "At discontinuities, cusps/corners, and vertical tangents.",
+      },
+      {
+        "q": "State the Power Rule for \\(\\frac{d}{dx}[x^n]\\).",
+        "a": "\\(\\frac{d}{dx}[x^n]=nx^{n-1}\\).",
+      },
+      {
+        "q": "State the Product Rule for \\(\\frac{d}{dx}[fg]\\).",
+        "a": "\\(\\frac{d}{dx}[fg]=f'g+fg'\\).",
+      },
+      {
+        "q": "State the Quotient Rule for \\(\\frac{d}{dx}\\left(\\frac{f}{g}\\right)\\).",
+        "a": "\\(\\frac{d}{dx}\\left(\\frac{f}{g}\\right)=\\frac{gf'-fg'}{g^2}\\).",
+      },
+      {
+        "q": "Derivative of \\(\\sin x\\), \\(\\cos x\\), and \\(\\tan x\\).",
+        "a": "\\((\\sin x)'=\\cos x\\), \\((\\cos x)'=-\\sin x\\), and \\((\\tan x)'=\\sec^2x\\).",
+      },
+      {
+        "q": "Derivative of \\(e^x\\) and \\(\\ln x\\).",
+        "a": "\\((e^x)'=e^x\\) and \\((\\ln x)'=\\frac1x\\).",
+      },
+      {
+        "q": "Derivative of \\(\\sec x\\) and \\(\\cot x\\).",
+        "a": "\\((\\sec x)'=\\sec x\\tan x\\) and \\((\\cot x)'=-\\csc x\\cot x\\).",
+      },
+      {
+        "q": "Derivative of \\(\\sqrt{x}\\) and \\(\\frac1x\\).",
+        "a": "\\((\\sqrt{x})'=\\frac{1}{2\\sqrt{x}}\\) and \\(\\left(\\frac1x\\right)'=-\\frac{1}{x^2}\\).",
+      },
+      {
+        "q": "Tangent line to \\(f\\) at \\(x=a\\).",
+        "a": "Use point and slope: \\(y-f(a)=f'(a)(x-a)\\).",
+      }
+    ]
+  },
+  "unit3": {
+    "label": "Unit 3 – Chain, Implicit & Inverses",
+    "cls": "unit3",
+    "cards": [
+      {
+        "q": "Chain Rule, if \\(h(x)=f(g(x))\\), then",
+        "a": " \\(h'(x)=f'(g(x))g'(x)\\).",
+      },
+      {
+        "q": "State the derivative formula for an inverse function.",
+        "a": "If \\(g=f^{-1}\\), then \\(g'(x)=\\frac{1}{f'(g(x))}\\).",
+      },
+      {
+        "q": "Implicit differentiation: \\(\\frac{d}{dx}(y^2)\\)",
+        "a": "\\(2y\\frac{dy}{dx}\\).",
+      },
+      {
+        "q": "Implicit differentiation: \\(\\frac{d}{dx}(xy)\\)",
+        "a": "\\(x\\frac{dy}{dx}+y\\).",
+      },
+      {
+        "q": "If \\(\\frac{dy}{dx}=x^2+y^3\\), find \\(\\frac{d^2y}{dx^2}\\).",
+        "a": "\\(\\frac{d^2y}{dx^2}=2x+3y^2\\frac{dy}{dx}=2x+3y^2(x^2+y^3)\\).",
+      },
+      {
+        "q": "State the derivative formula for \\(a^x\\).",
+        "a": "\\(\\frac{d}{dx}[a^x]=a^x\\ln a\\).",
+      },
+      {
+        "q": "State the derivative formula for \\(\\log_a x\\).",
+        "a": "\\(\\frac{d}{dx}[\\log_a x]=\\frac{1}{x\\ln a}\\).",
+      },
+      {
+        "q": "Derivative of \\(\\arcsin x\\)",
+        "a": "\\(\\frac{1}{\\sqrt{1-x^2}}\\).",
+      },
+      {
+        "q": "Derivative of \\(\\arctan x\\)",
+        "a": "\\(\\frac{1}{1+x^2}\\).",
+      }
+    ]
+  },
+  "unit4": {
+    "label": "Unit 4 – Derivative Applications",
+    "cls": "unit4",
+    "cards": [
+      {
+        "q": "Give velocity and acceleration from position \\(x(t)\\).",
+        "a": "\\(v(t)=x'(t)\\) and \\(a(t)=v'(t)=x''(t)\\).",
+      },
+      {
+        "q": "When is a particle at rest?",
+        "a": "When \\(v(t)=0\\).",
+      },
+      {
+        "q": "What is speed?",
+        "a": "\\(|v(t)|\\).",
+      },
+      {
+        "q": "When is speed increasing?",
+        "a": "When \\(v(t)\\) and \\(a(t)\\) have the same sign.",
+      },
+      {
+        "q": "When is speed decreasing?",
+        "a": "When \\(v(t)\\) and \\(a(t)\\) have opposite signs.",
+      },
+      {
+        "q": "For related rates, take \\(\\frac{d}{dt}\\) of \\(x^2+y^2=z^2\\).",
+        "a": "\\(2x\\frac{dx}{dt}+2y\\frac{dy}{dt}=2z\\frac{dz}{dt}\\).",
+      },
+      {
+        "q": "Tangent-line approximation for \\(f\\) at \\(x=a\\)",
+        "a": "\\(L(x)=f(a)+f'(a)(x-a)\\).",
+      },
+      {
+        "q": "When does a tangent-line approximation for \\(f\\) overestimate?",
+        "a": "When \\(f\\) is concave down.",
+      },
+      {
+        "q": "When does a tangent-line approximation for \\(f\\) underestimate?",
+        "a": "When \\(f\\) is concave up.",
+      },
+      {
+        "q": "State L'Hospital's Rule for an indeterminate quotient.",
+        "a": "For an indeterminate quotient, \\(\\dlim\\frac{f(x)}{g(x)}=\\dlim\\frac{f'(x)}{g'(x)}\\), when the derivative limit exists.",
+      }
+    ]
+  },
+  "unit5": {
+    "label": "Unit 5 – Derivative Analysis",
+    "cls": "unit5",
+    "cards": [
+      {
+        "q": "What are critical points of \\(f\\)?",
+        "a": "Values where \\(f'(x)=0\\) or \\(f'(x)\\) is undefined.",
+      },
+      {
+        "q": "What condition gives a horizontal tangent for \\(f\\)?",
+        "a": "\\(f'(x)=0\\), often numerator \\(=0\\).",
+      },
+      {
+        "q": "What condition gives a vertical tangent for \\(f\\)?",
+        "a": "\\(f'(x)\\) undefined, often denominator \\(=0\\).",
+      },
+      {
+        "q": "How do you find absolute extrema of \\(f\\) on \\([a,b]\\)?",
+        "a": "Check \\(f(a)\\), \\(f(b)\\), and all critical points in \\((a,b)\\).",
+      },
+      {
+        "q": "State the increasing/decreasing test for \\(f\\) using \\(f'\\).",
+        "a": "\\(f'>0\\Rightarrow\\) \\(f\\) is increasing. \\(f'<0\\Rightarrow\\) \\(f\\) is decreasing.",
+      },
+      {
+        "q": "Relative max/min of \\(f\\) from \\(f'\\)",
+        "a": "\\(f'\\) changes \\(+\\) to \\(-\\): relative max. \\(f'\\) changes \\(-\\) to \\(+\\): relative min.",
+      },
+      {
+        "q": "State the concavity test for \\(f\\) using \\(f'\\) or \\(f''\\).",
+        "a": "\\(f''>0\\) or \\(f'\\) increasing: \\(f\\) is concave up. \\(f''<0\\) or \\(f'\\) decreasing: \\(f\\) is concave down.",
+      },
+      {
+        "q": "How can you identify a point of inflection for \\(f\\)?",
+        "a": "Where \\(f''\\) changes sign, or where \\(f'\\) has a relative extremum.",
+      },
+      {
+        "q": "State the Second Derivative Test for \\(f\\).",
+        "a": "If \\(f'(c)=0\\) and \\(f''(c)>0\\), relative min. If \\(f''(c)<0\\), relative max.",
+      },
+      {
+        "q": "State the Mean Value Theorem for \\(f\\).",
+        "a": "If \\(f\\) is continuous on \\([a,b]\\) and differentiable on \\((a,b)\\), then some \\(c\\in(a,b)\\) has \\(f'(c)=\\frac{f(b)-f(a)}{b-a}\\).",
+      },
+      {
+        "q": "State the Extreme Value Theorem for \\(f\\).",
+        "a": "If \\(f\\) is continuous on \\([a,b]\\), then \\(f\\) attains an absolute maximum and minimum on \\([a,b]\\).",
+      }
+    ]
+  },
+  "unit6": {
+    "label": "Unit 6 – Integrals",
+    "cls": "unit6",
+    "cards": [
+      {
+        "q": "Left Riemann Sum over/under rules for \\(f\\)",
+        "a": "Left overestimates when \\(f\\) decreases and underestimates when \\(f\\) increases.",
+      },
+      {
+        "q": "Right Riemann Sum over/under rules for \\(f\\)",
+        "a": "Right overestimates when \\(f\\) increases and underestimates when \\(f\\) decreases.",
+      },
+      {
+        "q": "Trapezoid and midpoint over/under rules for \\(f\\)",
+        "a": "Trapezoid over if \\(f\\) is concave up, under if concave down. Midpoint over if \\(f\\) is concave down, under if concave up.",
+      },
+      {
+        "q": "Evaluate \\(\\int f(x)\\,dx\\) if \\(F'=f\\).",
+        "a": "\\(\\int f(x)\\,dx=F(x)+C\\).",
+      },
+      {
+        "q": "Evaluate \\(\\int x^n\\,dx\\), where \\(n\\ne -1\\).",
+        "a": "\\(\\int x^n\\,dx=\\frac{x^{n+1}}{n+1}+C\\).",
+      },
+      {
+        "q": "Evaluate \\(\\int\\sin x\\,dx\\), \\(\\int\\cos x\\,dx\\), \\(\\int\\frac1x\\,dx\\), and \\(\\int e^x\\,dx\\).",
+        "a": "\\(\\int\\sin x\\,dx=-\\cos x+C\\), \\(\\int\\cos x\\,dx=\\sin x+C\\), \\(\\int\\frac1x\\,dx=\\ln|x|+C\\), and \\(\\int e^x\\,dx=e^x+C\\).",
+      },
+      {
+        "q": "Evaluate \\(\\int_a^b f(x)\\,dx\\) if \\(F'=f\\).",
+        "a": "\\(\\int_a^b f(x)\\,dx=F(b)-F(a)\\).",
+      },
+      {
+        "q": "Evaluate \\(\\frac{d}{dx}\\left[\\int_a^x f(t)\\,dt\\right]\\).",
+        "a": "\\(\\frac{d}{dx}\\left[\\int_a^x f(t)\\,dt\\right]=f(x)\\).",
+      },
+      {
+        "q": "Write the FTC initial value form for \\(F(b)\\) using \\(F(a)\\) and \\(\\int_a^b f(x)\\,dx\\).",
+        "a": "\\(F(b)=F(a)+\\int_a^b f(x)\\,dx\\).",
+      },
+      {
+        "q": "Use \\(u\\)-substitution to evaluate \\(\\int\\sin(4x)\\,dx\\).",
+        "a": "Let \\(u=4x\\). Then \\(\\int\\sin(4x)\\,dx=-\\frac14\\cos(4x)+C\\).",
+      },
+      {
+        "q": "State the integration by parts formula.",
+        "a": "\\(\\int u\\,dv=uv-\\int v\\,du\\).",
+        "bcOnly": true,
+      },
+      {
+        "q": "State the LIATE priority order for choosing \\(u\\).",
+        "a": "Log, inverse trig, algebraic, trig, exponential.",
+        "bcOnly": true,
+      },
+      {
+        "q": "Set up partial fractions for two distinct linear factors.",
+        "a": "\\(\\frac{P(x)}{(x-r_1)(x-r_2)}=\\frac{A}{x-r_1}+\\frac{B}{x-r_2}\\).",
+        "bcOnly": true,
+      },
+      {
+        "q": "Rewrite \\(\\int_a^\\infty f(x)\\,dx\\) as a proper integral limit.",
+        "a": "\\(\\int_a^\\infty f(x)\\,dx=\\dlim_{b\\to\\infty}\\int_a^b f(x)\\,dx\\).",
+        "bcOnly": true,
+      },
+      {
+        "q": "State the \\(p\\)-integral convergence rule.",
+        "a": "\\(\\int_1^\\infty\\frac{1}{x^p}\\,dx\\) converges for \\(p>1\\) and diverges for \\(p\\le1\\).",
+        "bcOnly": true,
+      }
+    ]
+  },
+  "unit7": {
+    "label": "Unit 7 – Differential Equations",
+    "cls": "unit7",
+    "cards": [
+      {
+        "q": "How do you separate variables for \\(\\frac{dy}{dx}=g(x)h(y)\\)?",
+        "a": "\\(\\frac{1}{h(y)}\\,dy=g(x)\\,dx\\), then integrate both sides.",
+      },
+      {
+        "q": "After integrating a separable differential equation, what should you do?",
+        "a": "Apply the initial condition if given, then solve for \\(y\\).",
+      },
+      {
+        "q": "State the exponential differential equation model and what it means.",
+        "a": "\\(\\frac{dy}{dt}=ky\\), meaning rate of change is proportional to amount present.",
+      },
+      {
+        "q": "Solution form for \\(\\frac{dy}{dt}=ky\\)",
+        "a": "\\(y=Ce^{kt}\\).",
+      },
+      {
+        "q": "State Euler's Method update formula.",
+        "a": "\\(y_{n+1}=y_n+\\frac{dy}{dx}\\Delta x\\).",
+        "bcOnly": true,
+      },
+      {
+        "q": "State the logistic differential equation model.",
+        "a": "\\(\\frac{dP}{dt}=kP\\left(1-\\frac{P}{L}\\right)\\), where \\(L\\) is carrying capacity.",
+        "bcOnly": true,
+      },
+      {
+        "q": "When is logistic growth fastest?",
+        "a": "At \\(P=\\frac{L}{2}\\).",
+        "bcOnly": true,
+      }
+    ]
+  },
+  "unit8": {
+    "label": "Unit 8 – Applications of Integration",
+    "cls": "unit8",
+    "cards": [
+      {
+        "q": "State the average value formula for \\(f\\) on \\([a,b]\\).",
+        "a": "\\(f_{\\text{avg}}=\\frac{1}{b-a}\\int_a^b f(x)\\,dx\\).",
+      },
+      {
+        "q": "Give the integral formula for displacement from velocity.",
+        "a": "\\(\\int_a^b v(t)\\,dt\\).",
+      },
+      {
+        "q": "Give the integral formula for total distance from velocity.",
+        "a": "\\(\\int_a^b |v(t)|\\,dt\\).",
+      },
+      {
+        "q": "Give the area formula using vertical rectangles.",
+        "a": "\\(A=\\int_a^b(\\text{top}-\\text{bottom})\\,dx\\).",
+      },
+      {
+        "q": "Give the area formula using horizontal rectangles.",
+        "a": "\\(A=\\int_c^d(\\text{right}-\\text{left})\\,dy\\).",
+      },
+      {
+        "q": "Give the general cross-section volume formula.",
+        "a": "\\(V=\\int_a^b A(x)\\,dx\\), where \\(A(x)\\) is cross-sectional area.",
+      },
+      {
+        "q": "Give the disk-method volume formula.",
+        "a": "\\(V=\\pi\\int_a^b [R(x)]^2\\,dx\\).",
+      },
+      {
+        "q": "Give the washer-method volume formula.",
+        "a": "\\(V=\\pi\\int_a^b([R(x)]^2-[r(x)]^2)\\,dx\\).",
+      },
+      {
+        "q": "Give the arc length formula for \\(y=f(x)\\).",
+        "a": "\\(L=\\int_a^b\\sqrt{1+\\left(\\frac{dy}{dx}\\right)^2}\\,dx\\).",
+        "bcOnly": true,
+      }
+    ]
+  },
+  "unit9": {
+    "label": "Unit 9 – BC Parametric & Polar",
+    "cls": "unit9",
+    "bcOnly": true,
+    "cards": [
+      {
+        "q": "Give the formula for \\(\\frac{dy}{dx}\\) from parametric equations.",
+        "a": "\\(\\frac{dy}{dx}=\\frac{dy/dt}{dx/dt}\\).",
+      },
+      {
+        "q": "Give the formula for \\(\\frac{d^2y}{dx^2}\\) from parametric equations.",
+        "a": "\\(\\frac{d^2y}{dx^2}=\\frac{\\frac{d}{dt}\\left(\\frac{dy}{dx}\\right)}{dx/dt}\\).",
+      },
+      {
+        "q": "Give the speed formula from parametric equations.",
+        "a": "\\(\\sqrt{(dx/dt)^2+(dy/dt)^2}\\).",
+      },
+      {
+        "q": "State the condition for a parametric particle to be at rest.",
+        "a": "Both \\(\\frac{dx}{dt}=0\\) and \\(\\frac{dy}{dt}=0\\).",
+      },
+      {
+        "q": "Give the total distance formula for parametric motion.",
+        "a": "\\(\\int_{t_1}^{t_2}\\sqrt{(dx/dt)^2+(dy/dt)^2}\\,dt\\).",
+      },
+      {
+        "q": "Give vector position, velocity, and acceleration notation.",
+        "a": "\\(\\vec r(t)=\\langle x(t),y(t)\\rangle\\), \\(\\vec v(t)=\\langle x'(t),y'(t)\\rangle\\), \\(\\vec a(t)=\\langle x''(t),y''(t)\\rangle\\).",
+      },
+      {
+        "q": "Polar conversions for \\(x\\) and \\(y\\) coordinates",
+        "a": "\\(x=r\\cos\\theta\\) and \\(y=r\\sin\\theta\\).",
+      },
+      {
+        "q": "Polar derivative using \\(\\frac{dy}{d\\theta}\\) and \\(\\frac{dx}{d\\theta}\\)",
+        "a": "\\(\\frac{dy}{dx}=\\frac{dy/d\\theta}{dx/d\\theta}=\\frac{r'\\sin\\theta+r\\cos\\theta}{r'\\cos\\theta-r\\sin\\theta}\\).",
+      },
+      {
+        "q": "Give the polar area formula.",
+        "a": "\\(A=\\frac12\\int_\\alpha^\\beta r^2\\,d\\theta\\).",
+      },
+      {
+        "q": "Give the polar area-between-curves formula.",
+        "a": "\\(A=\\frac12\\int_\\alpha^\\beta (R^2-r^2)\\,d\\theta\\).",
+      }
+    ]
+  },
+  "unit10": {
+    "label": "Unit 10 – BC Series",
+    "cls": "unit10",
+    "bcOnly": true,
+    "cards": [
+      {
+        "q": "State the \\(n\\)th Term Test for divergence.",
+        "a": "If \\(\\lim a_n\\ne0\\), then \\(\\sum a_n\\) diverges.",
+      },
+      {
+        "q": "State the convergence rule and sum formula for a geometric series.",
+        "a": "For \\(\\sum ar^n\\) or \\(\\sum ar^{n-1}\\): converges if \\(|r|<1\\), diverges if \\(|r|\\ge1\\), and \\(S=\\frac{a}{1-r}\\).",
+      },
+      {
+        "q": "State the \\(p\\)-series convergence rule.",
+        "a": "\\(\\sum\\frac1{n^p}\\) converges for \\(p>1\\), diverges for \\(p\\le1\\).",
+      },
+      {
+        "q": "State the hypotheses and conclusion of the Integral Test.",
+        "a": "If \\(a_n=f(n)\\), where \\(f\\) is positive, continuous, and decreasing, then \\(\\sum a_n\\) and \\(\\int_1^\\infty f(x)\\,dx\\) behave the same.",
+      },
+      {
+        "q": "State the two useful comparison directions.",
+        "a": "If \\(0\\le a_n\\le b_n\\): \\(\\sum b_n\\) convergent implies \\(\\sum a_n\\) convergent; \\(\\sum a_n\\) divergent implies \\(\\sum b_n\\) divergent.",
+      },
+      {
+        "q": "State the condition that makes two positive series behave the same.",
+        "a": "If \\(\\lim\\frac{a_n}{b_n}=L\\) and \\(0<L<\\infty\\), then both series have the same behavior.",
+      },
+      {
+        "q": "State the Ratio Test outcomes.",
+        "a": "\\(L=\\lim\\left|\\frac{a_{n+1}}{a_n}\\right|\\). If \\(L<1\\), converges; if \\(L>1\\), diverges.",
+      },
+      {
+        "q": "State the three conditions for the Alternating Series Test.",
+        "a": "\\(\\sum (-1)^n b_n\\) converges if \\(b_n>0\\), \\(b_n\\) decreases, and \\(\\lim b_n=0\\).",
+      },
+      {
+        "q": "Define absolute and conditional convergence.",
+        "a": "If \\(\\sum |a_n|\\) converges, then \\(\\sum a_n\\) converges absolutely. If \\(\\sum a_n\\) converges but \\(\\sum |a_n|\\) diverges, it is conditional.",
+      },
+      {
+        "q": "Which test usually goes with factorials?",
+        "a": "Ratio Test.",
+      },
+      {
+        "q": "Which test usually goes with \\((-1)^n\\)?",
+        "a": "Alternating Series Test, then check absolute/conditional if needed.",
+      },
+      {
+        "q": "Give the general Taylor series formula centered at \\(c\\).",
+        "a": "\\(f(x)=\\sum_{n=0}^{\\infty}\\frac{f^{(n)}(c)}{n!}(x-c)^n\\).",
+      },
+      {
+        "q": "Define a Maclaurin series.",
+        "a": "A Taylor series centered at \\(c=0\\).",
+      },
+      {
+        "q": "Describe how to find radius and interval of convergence.",
+        "a": "Use Ratio Test for \\(|x-c|<R\\). Then check endpoints separately for IOC.",
+      },
+      {
+        "q": "Differentiate \\(\\sum a_n(x-c)^n\\) term-by-term.",
+        "a": "\\(\\frac{d}{dx}\\sum a_n(x-c)^n=\\sum n a_n(x-c)^{n-1}\\). Radius stays same; endpoints may change.",
+      },
+      {
+        "q": "Integrate \\(\\sum a_n(x-c)^n\\) term-by-term.",
+        "a": "\\(\\int\\sum a_n(x-c)^n\\,dx=\\sum\\frac{a_n(x-c)^{n+1}}{n+1}+C\\). Radius stays same; endpoints may change.",
+      },
+      {
+        "q": "State the error bound using the first unused term.",
+        "a": "The error after \\(n\\) terms satisfies \\(|R_n|\\le a_{n+1}\\), the first unused term.",
+      },
+      {
+        "q": "State the Lagrange Error Bound formula.",
+        "a": "\\(|R_n(x)|\\le\\frac{M}{(n+1)!}|x-c|^{n+1}\\), where \\(M=\\max|f^{(n+1)}|\\).",
+      },
+      {
+        "q": "Does the harmonic series converge or diverge?",
+        "a": "\\(\\sum_{n=1}^{\\infty}\\frac1n\\) diverges.",
+      },
+      {
+        "q": "Does the alternating harmonic series converge or diverge?",
+        "a": "\\(\\sum_{n=1}^{\\infty}\\frac{(-1)^{n+1}}{n}\\) converges.",
+      },
+      {
+        "q": "Maclaurin series for \\(e^x\\)",
+        "a": "\\(e^x=\\sum_{n=0}^{\\infty}\\frac{x^n}{n!}=1+x+\\frac{x^2}{2!}+\\cdots\\).",
+      },
+      {
+        "q": "Maclaurin series for \\(\\sin x\\)",
+        "a": "\\(\\sin x=\\sum_{n=0}^{\\infty}\\frac{(-1)^n x^{2n+1}}{(2n+1)!}=x-\\frac{x^3}{3!}+\\frac{x^5}{5!}-\\cdots\\).",
+      },
+      {
+        "q": "Maclaurin series for \\(\\cos x\\)",
+        "a": "\\(\\cos x=\\sum_{n=0}^{\\infty}\\frac{(-1)^n x^{2n}}{(2n)!}=1-\\frac{x^2}{2!}+\\frac{x^4}{4!}-\\cdots\\).",
+      },
+      {
+        "q": "State the geometric power series and its interval.",
+        "a": "\\(\\frac1{1-x}=\\sum_{n=0}^{\\infty}x^n\\), for \\(|x|<1\\).",
+      },
+      {
+        "q": "Maclaurin series for \\(\\ln(1+x)\\)",
+        "a": "\\(\\ln(1+x)=\\sum_{n=1}^{\\infty}\\frac{(-1)^{n+1}x^n}{n}=x-\\frac{x^2}{2}+\\frac{x^3}{3}-\\cdots\\), for \\(-1<x\\le1\\).",
+      },
+      {
+        "q": "Maclaurin series for \\(\\arctan x\\)",
+        "a": "\\(\\arctan x=\\sum_{n=0}^{\\infty}\\frac{(-1)^n x^{2n+1}}{2n+1}=x-\\frac{x^3}{3}+\\frac{x^5}{5}-\\cdots\\), for \\(|x|\\le1\\).",
+      },
+      {
+        "q": "How do you find the series for \\(\\sin(x^2)\\)?",
+        "a": "Substitute \\(x^2\\) into the \\(\\sin x\\) series: \\(\\sin(x^2)=x^2-\\frac{x^6}{3!}+\\frac{x^{10}}{5!}-\\cdots\\).",
+      }
+    ]
+  }
+};
 
-// Core variables
-const stickCanvas = document.getElementById('stickCanvas');
-const ctx = stickCanvas.getContext('2d');
-const histCanvas = document.getElementById('histCanvas');
-const histCtx = histCanvas.getContext('2d');
-const statsDiv = document.getElementById('stats');
-const lastTrialBox = document.getElementById('lastTrialBox');
+let currentMode = "AB";
+const unitOrderAB = ["unit0","unit1","unit2","unit3","unit4","unit5","unit6","unit7","unit8"];
+const unitOrderBC = ["unit0","unit1","unit2","unit3","unit4","unit5","unit6","unit7","unit8","unit9","unit10"];
 
-let targetSum = parseFloat(document.getElementById('targetSumInput').value);
-let currentSticks = [], currentSum = 0;
-let trialResults = [], lastStickIndices = [];
-let dropOneActive = false;
+function activeUnitKeys() { return currentMode === "AB" ? unitOrderAB : unitOrderBC; }
 
-const colors = ['#ff9800','#00ff00','#ff00ff','#ff1744','#00FFFF','#B57EDC','#ffeb3b','#FF8DA1','#0096FF'];
-
-function getStickColor(i){ return colors[i%colors.length]; }
-
-function fixCanvasDPI(canvas, ctx){
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  ctx.setTransform(1,0,0,1,0,0); // reset previous scaling
-  ctx.scale(dpr, dpr);
+function unitSortIndex(key) {
+  const keys = unitOrderBC.includes(key) ? unitOrderBC : activeUnitKeys();
+  const index = keys.indexOf(key);
+  return index === -1 ? 999 : index;
 }
 
-window.addEventListener('resize', () => {
-  fixCanvasDPI(stickCanvas, ctx);
-  fixCanvasDPI(histCanvas, histCtx);
-  drawBase();
-  updateHistogram();
-});
-
-
-function cssSize(canvas) {
-  // use clientWidth/clientHeight which represent CSS pixels
-  return { w: canvas.clientWidth, h: canvas.clientHeight };
+function sortSelectionsByUnit(selections) {
+  return [...selections].sort((a, b) => unitSortIndex(a.key) - unitSortIndex(b.key));
 }
 
-function drawBase() {
-  // clear using device size then draw based on CSS sizes
-  ctx.clearRect(0, 0, stickCanvas.width, stickCanvas.height);
-
-  const { w: cW, h: cH } = cssSize(stickCanvas);
-  const baseY = cH - 50;
-  const overflowFraction = 0.10;
-  const maxSum = Math.max(targetSum * (1 + overflowFraction), 0.001);
-  const scale = cW / maxSum;   // pixels per unit (CSS pixels)
-
-  // Draw baseline
-  ctx.strokeStyle = "#aaa";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(0, baseY);
-  ctx.lineTo(cW, baseY);
-  ctx.stroke();
-
-  // Draw checkerboard overflow region (use CSS coords)
-  const checkerStartX = targetSum * scale;
-  const checkerEndX = cW;
-  const checkerHeight = cH;
-  const boxSize = 8;
-
-  for (let y = 0; y < checkerHeight; y += boxSize) {
-    let toggle = Math.floor(y / boxSize) % 2 === 0;
-    for (let x = checkerStartX; x < checkerEndX; x += boxSize) {
-      ctx.fillStyle = toggle ? "#fff" : "#000";
-      ctx.fillRect(x, y, boxSize, boxSize);
-      toggle = !toggle;
-    }
-  }
-
-  return baseY;
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById("abBtn").classList.toggle("active", mode === "AB");
+  document.getElementById("bcBtn").classList.toggle("active", mode === "BC");
+  const hint = document.getElementById("bcStudyHint");
+  if (hint) hint.style.display = mode === "BC" ? "inline" : "none";
+  sanitizeQuickQuizInput();
 }
 
-function drawStickSegment(xCss, widthCss, yCss, index, val, isLast=false) {
-  const { w: cW, h: cH } = cssSize(stickCanvas);
-  const stickHeight = cH * 0.50;
-  const color = getStickColor(index);
+function buildControls() {
+  const hint = document.getElementById("bcStudyHint");
+  if (hint) hint.style.display = currentMode === "BC" ? "inline" : "none";
+}
 
-  // draw using CSS pixel coordinates (ctx already scaled)
-  ctx.fillStyle = color;
-  ctx.fillRect(xCss, yCss, widthCss, stickHeight);
-
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = 'black';
-  ctx.strokeRect(xCss, yCss, widthCss, stickHeight);
-
-  // font sizing using CSS pixels
-  let baseFont = stickHeight * 0.8;
-  let fontSize;
-  const tinyThreshold = 0.045 * targetSum;
-
-  if (val <= tinyThreshold) {
-    const scaleFactor = val / tinyThreshold;
-    fontSize = baseFont * 0.5 * scaleFactor;
-    fontSize = Math.max(6, fontSize);
-  } else {
-    fontSize = baseFont * (targetSum > 1 ? 1 / Math.pow(targetSum, 0.25) : 1);
-    fontSize = Math.min(38, fontSize);
+function shuffle(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
   }
+  return copy;
+}
 
-  // ------------------------------------------
-  // 📱 MOBILE LABEL SCALING (new)
-  // ------------------------------------------
-  if (window.innerWidth < 768) {
-    fontSize *= 0.75;     // 45% smaller on mobile
-  }
-  // ------------------------------------------
+function pick(arr, n) { return shuffle(arr).slice(0, Math.min(n, arr.length)); }
 
-  ctx.font = `bold ${fontSize}px Segoe UI`;
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#000';
+function cardWithMeta(key, card) {
+  const deck = decks[key];
+  return { ...card, key, cls: deck.cls, label: deck.label };
+}
 
-  const cy = yCss + stickHeight / 2;
+function visibleCards(key) {
+  return decks[key].cards.filter(card => !card.bcOnly || currentMode === "BC");
+}
 
-  // label position (center or shifted if last truncated)
-  let textX = xCss + widthCss / 2;
+function tokenToKey(token) {
+  const raw = String(token || "").trim();
+  if (!raw) return null;
+  if (!/^\d+$/.test(raw)) return null;
+  const unitNum = Number(raw);
+  return `unit${unitNum}`;
+}
 
-  if (isLast) {
-    const canvasRight = cW;
-    const visibleWidth = Math.min(widthCss, canvasRight - xCss);
-    const fractionVisible = visibleWidth / widthCss;
-    const shiftThreshold = 0.6;
-    if (fractionVisible < shiftThreshold) {
-      textX = xCss + widthCss * fractionVisible / 2;
+function cleanUnitInput(raw) {
+  return String(raw || "")
+    .toLowerCase()
+    .replace(/units?/g, "")
+    .replace(/[–—]/g, "-")
+    .replace(/\s+/g, "")
+    .trim();
+}
+
+function parseQuickQuizUnits() {
+  const input = document.getElementById("quickQuizUnits");
+  const cleaned = cleanUnitInput(input?.value || "0");
+  const pieces = cleaned.split(/[,;]/).filter(Boolean);
+  const keys = [];
+
+  pieces.forEach(piece => {
+    const range = piece.match(/^(\d+)-(\d+)$/);
+    if (range) {
+      const start = Number(range[1]);
+      const end = Number(range[2]);
+      const step = start <= end ? 1 : -1;
+      for (let n = start; step > 0 ? n <= end : n >= end; n += step) {
+        const key = tokenToKey(String(n));
+        if (key && activeUnitKeys().includes(key) && !keys.includes(key)) keys.push(key);
+      }
     } else {
-      textX = xCss + widthCss / 2;
+      const key = tokenToKey(piece);
+      if (key && activeUnitKeys().includes(key) && !keys.includes(key)) keys.push(key);
     }
+  });
+
+  return keys.length ? keys : ["unit0"];
+}
+
+function sanitizeQuickQuizInput() {
+  const input = document.getElementById("quickQuizUnits");
+  if (!input) return;
+  parseQuickQuizUnits();
+}
+
+function getQuizSelections(maxQuestions = 5) {
+  const unitKeys = parseQuickQuizUnits();
+  const chosenUnitKeys = [];
+
+  if (unitKeys.length === 1) {
+    for (let i = 0; i < maxQuestions; i++) chosenUnitKeys.push(unitKeys[0]);
+  } else if (unitKeys.length >= maxQuestions) {
+    chosenUnitKeys.push(...shuffle(unitKeys).slice(0, maxQuestions));
+  } else {
+    while (chosenUnitKeys.length < maxQuestions) {
+      chosenUnitKeys.push(...shuffle(unitKeys));
+    }
+    chosenUnitKeys.length = maxQuestions;
   }
 
-  ctx.textAlign = 'center';
-  ctx.fillText(val.toFixed(2), textX, cy);
-}
-
-
-
-// Animated drop
-async function dropStickAnimated(len, index) {
-  const baseY = drawBase();
-  const { w: cW } = cssSize(stickCanvas);
-  const overflowFraction = 0.10;
-  const maxSum = Math.max(targetSum * (1 + overflowFraction), 0.001);
-  const scale = cW / maxSum;            // CSS pixels per unit
-  const stickWidthCss = len * scale;
-
-  // compute x in CSS pixels from sum of previous sticks (currentSticks holds raw numbers)
-  const x = currentSticks.slice(0, index).reduce((a, b) => a + b, 0) * scale;
-
-  let y = -60; // start above canvas (CSS px)
-  return new Promise(resolve => {
-    function fall() {
-      drawBase();
-
-      // draw previous sticks at final positions
-      let px = 0;
-      for (let i = 0; i < index; i++) {
-        const wCss = currentSticks[i] * scale;
-        drawStickSegment(px, wCss, baseY - 28, i, currentSticks[i], false);
-        px += wCss;
-      }
-
-      if (y < baseY - 28) {
-        y += 7;
-        drawStickSegment(x, stickWidthCss, y, index, len, false);
-        requestAnimationFrame(fall);
-      } else {
-        drawStickSegment(x, stickWidthCss, baseY - 28, index, len, true);
-        resolve();
-      }
-    }
-    fall();
+  const usedByUnit = {};
+  const selections = [];
+  chosenUnitKeys.forEach(key => {
+    if (!usedByUnit[key]) usedByUnit[key] = [];
+    const cards = visibleCards(key);
+    const available = cards.filter(card => !usedByUnit[key].includes(card));
+    const pool = available.length ? available : cards;
+    const card = pick(pool, 1)[0];
+    usedByUnit[key].push(card);
+    selections.push(cardWithMeta(key, card));
   });
+
+  return sortSelectionsByUnit(selections);
 }
 
-function resetTrialState(){ currentSticks=[]; currentSum=0; drawBase(); dropOneActive=false; }
-function endTrial(){ trialResults.push(currentSticks.length); lastStickIndices.push(currentSticks.length-1); dropOneActive=false; updateHistogram(); updateStats(); updateLastTrialBox(); }
+function renderCards(selections) {
+  const quiz = document.getElementById("quiz");
+  quiz.classList.remove("show-answers");
+  quiz.innerHTML = "";
 
-function fmt(x) {
-  return parseFloat(x.toFixed(4)).toString();
-}
-
-// Update the "Last Trial" box
-// Update the "Last Trial" box with 3 decimals for stick values
-function updateLastTrialBox() {
-  // clear if no sticks
-  if (currentSticks.length === 0) {
-    lastTrialBox.innerHTML = '';
+  if (selections.length === 0) {
+    quiz.innerHTML = `<div class="card answer" style="display:flex;"><strong>Choose a unit or unit range, then generate.</strong></div>`;
     return;
   }
 
-  let sum = 0;
-  let content = '';
-  currentSticks.forEach((v,i)=>{
-    sum += v;
-    const color = getStickColor(i);
-    const isLast = sum > targetSum;
-
-    content += `<span class="stickSpan" style="
-      color:${color};
-      ${isLast ? `border:2px solid ${color}; border-radius:4px; background: rgba(255,255,255,0.1); padding:2px 4px;` : ''}">
-      ${v.toFixed(3)}
-    </span> `;
+  selections.forEach((item, i) => {
+    const prompt = guidedPrompt(item);
+    const bcBadge = item.bcOnly ? `<span class="bc-badge">BC ONLY</span>` : "";
+    quiz.innerHTML += `
+      <div class="row">
+        <div class="card question-card ${item.cls}" onclick="this.closest('.row').classList.toggle('revealed')">
+          <div class="label">Problem ${i + 1} • ${item.label}${bcBadge}</div>
+          <div>${prompt}</div>
+        </div>
+        <div class="card answer">
+          <div class="label">Answer</div>
+          <div>${item.a}</div>
+        </div>
+      </div>`;
   });
 
-  lastTrialBox.innerHTML = `
-    <div class="card">
-      <strong>Last trial:</strong>
-      <div style="margin:6px 0;">${content}</div>
-      <div><strong>Sum:</strong> ${sum.toFixed(3)} > ${targetSum.toFixed(3)}</div>
-      <div><strong>Sticks used:</strong> ${currentSticks.length}</div>
-    </div>
-  `;
-}
-
-// Update the "Stats" box
-function updateStats() {
-  if (trialResults.length === 0) {
-    statsDiv.innerHTML = `
-  <div class="card">
-    <strong>Trials:</strong> ${n}<br>
-    <strong>Average sticks:</strong> ${fmt(avg)}<br>
-    ${theoretical}
-  </div>
-`;
-
-    return;
-  }
-
-  const n = trialResults.length;
-  const avg = trialResults.reduce((a, b) => a + b, 0) / n;
-
-  // CSS style for math spans
-  const mathStyle = 'font-size:0.9em; display:inline-block;';        // default
-  const mathStyleSmall = 'font-size:0.8em; display:inline-block;';  // smaller for target 4
-
-  let theoretical = '';
-
-  if (targetSum === 1) {
-    theoretical = `<strong>Theoretical:</strong> <span style="${mathStyle}">\\(e\\)</span> ≈ ${fmt(Math.E)}<br>
-                   <strong>|Sim - Theo|:</strong> ${fmt(Math.abs(avg - Math.E))}`;
-  } else if (targetSum === 2) {
-    const val = Math.E ** 2 - Math.E;
-    theoretical = `<strong>Theoretical:</strong> <span style="${mathStyle}">\\(e^2 - e\\)</span> ≈ ${fmt(val)}<br>
-                   <strong>|Sim - Theo|:</strong> ${fmt(Math.abs(avg - val))}`;
-  } else if (targetSum === 3) {
-    const val = 0.5 * (2 * Math.E ** 3 - 4 * Math.E ** 2 + Math.E);
-    theoretical = `<strong>Theoretical:</strong> <span style="${mathStyle}">\\(\\frac{1}{2}(2e^3 - 4e^2 + e)\\)</span> ≈ ${fmt(val)}<br>
-                   <strong>|Sim - Theo|:</strong> ${fmt(Math.abs(avg - val))}`;
-  } else if (targetSum === 4) {
-    const val = (1/6) * (6 * Math.E ** 4 - 18 * Math.E ** 3 + 12 * Math.E ** 2 - Math.E);
-    theoretical = `<strong>Theoretical:</strong> <span style="${mathStyleSmall}">\\(\\frac{1}{6}(6e^4 - 18e^3 + 12e^2 - e)\\)</span> ≈ ${fmt(val)}<br>
-                   <strong>|Sim - Theo|:</strong> ${fmt(Math.abs(avg - val))}`;
-  }
-
-  statsDiv.innerHTML = `
-    <div style="padding:12px; border-radius:10px; background: rgba(255,255,255,0.05);">
-      <strong>Trials:</strong> ${n}<br>
-      <strong>Average sticks:</strong> ${fmt(avg)}<br>
-      ${theoretical}
-    </div>
-  `;
-
-  // Render MathJax if loaded
   if (window.MathJax) MathJax.typesetPromise();
 }
 
+function guidedPrompt(item) {
+  const q = typeof item === "string" ? item : item.q;
+  const hint = typeof item === "string" ? "" : (item.hint || "");
+  return hint ? `${q}<div class="question-guidance">${hint}</div>` : q;
+}
 
+function printablePrompt(item) {
+  return guidedPrompt(item)
+    .replace(/<div class="question-guidance">Hint: /g, '<br><em>')
+    .replace(/<\/div>/g, '</em>');
+}
 
-// --- Histogram Table ---
-function updateHistTable() {
-  const container = document.getElementById("histTableContainer");
+function getPrintableSelections() {
+  return getQuizSelections(5);
+}
 
-  if (trialResults.length === 0) {
-    container.innerHTML = "";
+function unitShortLabel(item) {
+  const match = item.label.match(/^Unit\s+([0-9]+)/);
+  if (match) return `Unit ${match[1]}`;
+  if (item.key === "unit0") return "Unit 0";
+  return item.label.replace(/\s*[–-]\s*.*/, "");
+}
+
+function unitsCoveredText(selections) {
+  const labels = [];
+  sortSelectionsByUnit(selections).forEach(item => {
+    const label = unitShortLabel(item);
+    if (!labels.includes(label)) labels.push(label);
+  });
+  return labels.join(", ");
+}
+
+function renderPrintPack() {
+  const printArea = document.getElementById("printArea");
+  printArea.innerHTML = "";
+  const pages = 5;
+  const quizzesPerPage = 4;
+  for (let p = 1; p <= pages; p++) {
+    let pageHTML = `<div class="print-page">`;
+    for (let qz = 1; qz <= quizzesPerPage; qz++) {
+      const selections = getPrintableSelections();
+      pageHTML += `<section class="mini-quiz">
+        <h2><span class="quiz-title"><span>You Gotta Know Quiz</span></span></h2>
+        <div class="name-line"><span>Name: ____________________</span><span>Score: _____ / 5</span></div>
+        <ol>`;
+      selections.forEach(item => {
+        pageHTML += `<li><strong>${item.label.replace("Unit 0 – Prerequisite Knowledge", "Prerequisite Knowledge")}</strong>: ${printablePrompt(item)}<div class="answer-line"></div></li>`;
+      });
+      pageHTML += `</ol></section>`;
+    }
+    pageHTML += `</div>`;
+    printArea.innerHTML += pageHTML;
+  }
+
+  if (window.MathJax) {
+    MathJax.typesetPromise([printArea]).then(() => window.print());
+  } else {
+    window.print();
+  }
+}
+
+function generateQuiz() { renderCards(getQuizSelections(5)); }
+
+function resolveStudyUnit(input) {
+  const raw = String(input || "").trim();
+  if (!raw) return null;
+  const unitNumber = Number(raw);
+  if (!Number.isFinite(unitNumber)) return null;
+  if (Number.isInteger(unitNumber)) return `unit${unitNumber}`;
+  return null;
+}
+
+function studyTypedUnit() {
+  const input = document.getElementById("studyUnitInput").value;
+  const key = resolveStudyUnit(input);
+  const quiz = document.getElementById("quiz");
+
+  if (!key || !activeUnitKeys().includes(key)) {
+    quiz.classList.remove("show-answers");
+    const msg = currentMode === "BC"
+      ? "Type a visible BC unit number."
+      : "Type a visible AB unit number, or switch to BC for BC-only cards in Units 6-10.";
+    quiz.innerHTML = `<div class="card answer" style="display:flex;"><strong>${msg}</strong></div>`;
     return;
   }
 
-  const maxVal = Math.max(...trialResults);
-  const labels = Array.from({length: maxVal}, (_, i) => i + 1);
-  const total = trialResults.length;
-
-  let runningSum = 0;
-
-  let html = `<table style="width:100%; border-collapse: collapse; text-align:center;">
-      <tr>
-        <th style="border:1px solid #fff; padding:6px;">Sticks</th>
-        <th style="border:1px solid #fff; padding:6px;">Count</th>
-        <th style="border:1px solid #fff; padding:6px;">Relative Frequency</th>
-        <th style="border:1px solid #fff; padding:6px;">Running Sum</th>
-      </tr>`;
-
-  labels.forEach(l => {
-    const count = trialResults.filter(v => v === l).length;
-
-    // Skip rows with 0 count if targetSum > 4
-    if (targetSum > 4 && count === 0) return;
-
-    const rel = count / total;
-    const contribution = l * rel;
-    runningSum += contribution;
-
-    html += `
-      <tr>
-        <td style="border:1px solid #fff; padding:6px;">${l}</td>
-        <td style="border:1px solid #fff; padding:6px;">${count}</td>
-        <td style="border:1px solid #fff; padding:6px;">${fmt(rel)}</td>
-        <td style="border:1px solid #fff; padding:6px;">${fmt(runningSum)}</td>
-      </tr>`;
-  });
-
-  html += `</table>`;
-  container.innerHTML = html;
-}
-
-// --- Histogram Drawing ---
-function updateHistogram() {
-    const { w: cW, h: cH } = cssSize(histCanvas); // CSS pixels
-    const topPadding = 40;
-    const bottomPadding = 60;
-    const leftPadding = 70;
-    const rightPadding = 20;
-
-    const plotWidth = cW - leftPadding - rightPadding;
-    const plotHeight = cH - topPadding - bottomPadding;
-
-    // clear background
-    histCtx.fillStyle = 'rgb(30,30,50)';
-    histCtx.fillRect(0, 0, cW, cH);
-
-    if (trialResults.length === 0) {
-        updateHistTable();
-        return;
-    }
-
-    const rawMin = Math.min(...trialResults);
-    const rawMax = Math.max(...trialResults);
-    const target = Math.max(rawMax, 10);
-
-    // x-axis minimum: shift 3 below rawMin only if target > 10
-    const minVal = (target > 10) ? Math.max(1, rawMin - 9) : 1;
-
-    // create labels from minVal to target
-    const labels = Array.from({ length: target - minVal + 1 }, (_, i) => i + minVal);
-
-    // counts and proportions
-    const counts = labels.map(l => trialResults.filter(v => v === l).length);
-    const proportions = counts.map(c => c / trialResults.length);
-    const maxProp = Math.max(...proportions);
-    const yMax = maxProp * 1.1;
-    const barWidth = plotWidth / labels.length * 0.8;
-
-    // draw horizontal grid lines
-    histCtx.strokeStyle = 'rgba(255,255,255,0.2)';
-    histCtx.lineWidth = 1;
-    histCtx.font = '14px Segoe UI';
-    histCtx.fillStyle = '#fff';
-    histCtx.textAlign = 'right';
-    histCtx.textBaseline = 'middle';
-    const ySteps = 5;
-    for (let i = 0; i <= ySteps; i++) {
-        const prop = (i / ySteps) * maxProp;
-        const yPos = topPadding + plotHeight - (prop / yMax * plotHeight);
-        histCtx.beginPath();
-        histCtx.moveTo(leftPadding, yPos);
-        histCtx.lineTo(cW - rightPadding, yPos);
-        histCtx.stroke();
-        histCtx.fillText(prop.toFixed(2), leftPadding - 10, yPos);
-    }
-
-    // draw bars
-    labels.forEach((label, i) => {
-        const h = proportions[i] / yMax * plotHeight;
-        const color = getStickColor(label - 1); // adjust if getStickColor expects 0-based index
-        histCtx.fillStyle = color;
-        histCtx.fillRect(
-            leftPadding + i * (plotWidth / labels.length) + barWidth * 0.1,
-            topPadding + plotHeight - h,
-            barWidth,
-            h
-        );
-
-        // x-axis numbers
-        histCtx.fillStyle = '#fff';
-        histCtx.textAlign = 'center';
-        histCtx.textBaseline = 'top';
-        histCtx.fillText(label, leftPadding + i * (plotWidth / labels.length) + barWidth / 2, topPadding + plotHeight + 5);
-    });
-
-    // x-axis label
-    histCtx.textAlign = 'center';
-    histCtx.textBaseline = 'top';
-    histCtx.fillText('Sticks Needed', leftPadding + plotWidth / 2, cH - bottomPadding + 20);
-
-    updateHistTable();
+  const selections = visibleCards(key).map(card => cardWithMeta(key, card));
+  renderCards(selections);
 }
 
 
-
-
-window.addEventListener('load', init);
-window.addEventListener('resize', handleResize);
-
-
-// --- Button events ---
-document.getElementById('dropStick').onclick=async()=>{
-  if(!dropOneActive) resetTrialState(), dropOneActive=true;
-  const len=Math.random(); currentSticks.push(len); currentSum+=len;
-  await dropStickAnimated(len,currentSticks.length-1);
-  if(currentSum>targetSum) endTrial();
-};
-document.getElementById('dropOneTrial').onclick=async()=>{
-  resetTrialState();
-  let s=0;
-  while(s<=targetSum){ const len=Math.random(); currentSticks.push(len); await dropStickAnimated(len,currentSticks.length-1); s+=len; currentSum=s; }
-  endTrial();
-};
-document.getElementById('drop10').onclick=()=>runTrials(10,false);
-document.getElementById('drop1000').onclick=()=>runTrials(1000,false);
-document.getElementById('resetHist').onclick=()=>{ trialResults=[]; updateHistogram(); resetTrialState(); };
-document.getElementById('targetSumInput').addEventListener('input',e=>{ targetSum=parseFloat(e.target.value); trialResults=[]; updateHistogram(); resetTrialState(); });
-
-function runTrials(n,reset=true){ if(reset) resetTrialState();
-  for(let t=0;t<n;t++){ let s=0,count=0; while(s<=targetSum){ s+=Math.random(); count++; } trialResults.push(count); lastStickIndices.push(count-1); }
-  updateHistogram(); updateStats(); if(reset) resetTrialState();
+function studyAllCards(mode) {
+  setMode(mode);
+  const selections = activeUnitKeys().flatMap(key => visibleCards(key).map(card => cardWithMeta(key, card)));
+  renderCards(sortSelectionsByUnit(selections));
 }
 
-
-
-function handleResize() {
-  fixCanvasDPI(stickCanvas, ctx);
-  fixCanvasDPI(histCanvas, histCtx);
-  drawBase();
-  updateHistogram();
+function resetApp() {
+  setMode("AB");
+  const quickInput = document.getElementById("quickQuizUnits");
+  if (quickInput) quickInput.value = "0";
+  const studyInput = document.getElementById("studyUnitInput");
+  if (studyInput) studyInput.value = "0";
+  generateQuiz();
 }
 
-function init() {
-  // Wait for one animation frame to ensure layout has settled
-  requestAnimationFrame(() => {
-    handleResize();
-
-    // Optional extra frame for really slow mobile rendering
-    requestAnimationFrame(handleResize);
-  });
-}
-
-window.addEventListener('load', init);
-window.addEventListener('resize', handleResize);
-
-
-
+buildControls();
+resetApp();
 </script>
-
 </body>
 </html>
